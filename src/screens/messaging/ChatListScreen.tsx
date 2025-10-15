@@ -29,6 +29,7 @@ const ChatListScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/*Header for message page */}
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton}>
                     <Text style={styles.backButtonText}>Back</Text>
