@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BottomNavigation from '../../components/messaging/BottomNavigation';
 
 //replace with actual chat data later 
 const chats = [
@@ -46,13 +47,14 @@ const ChatListScreen = () => {
                 contentContainerStyle={styles.chatListContent} 
                 ListFooterComponent={<View style={styles.emptyChatItemPlaceholder} />}
             />
-            <View style={styles.bottomNav} >
-                <View style={styles.navIconPlaceholder}/>
-                <View style={[styles.navIconPlaceholder, styles.activeNavIcon]} />
-                <View style={styles.navIconPlaceholder} />
-            </View>
+            <BottomNavigation activeTab="Feed" onTabPress={() => {}} />
         </SafeAreaView>
     );
+};
+
+const handleTabPress = (index: number) => {
+    //TODO: Implement tab navigation
+    console.log(`Tab ${index} pressed`);
 };
 
 const styles = StyleSheet.create({
