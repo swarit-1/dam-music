@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 const styles = StyleSheet.create({
     bottomNav: {
@@ -25,7 +24,7 @@ const styles = StyleSheet.create({
 });
 
 interface BottomNavigationProps {
-    activeTab: 'Feed' | 'Workflow' | 'Profile';
+    activeTab: number;
     onTabPress: (index: number) => void;
 }
 
@@ -35,7 +34,10 @@ const BottomNavigation = ({ activeTab, onTabPress }: BottomNavigationProps) => {
             {[0, 1, 2].map((index) => (
                 <TouchableOpacity 
                     key={index} 
-                    style={styles.navIconPlaceholder} 
+                    style={[
+                        styles.navIconPlaceholder,
+                        activeTab === index && styles.activeNavIcon
+                    ]} 
                     onPress={() => onTabPress(index)}
                 /> 
             ))}
