@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ChatListScreen from '../screens/messaging/ChatListScreen';
+import ProfileScreen from '../../screens/ProfileScreen';
 import { View, StyleSheet, Text } from 'react-native';
 
 const Tab = createBottomTabNavigator();
@@ -36,7 +37,7 @@ const AppNavigator = () => {
                 />
                 <Tab.Screen 
                     name="Profile" 
-                    component={ProfilePlaceholderScreen}
+                    component={ProfileScreen}
                     options={{
                         tabBarIcon: ({ focused }) => (
                             <View style={[styles.tabIcon, focused && styles.tabIconActive]} />
