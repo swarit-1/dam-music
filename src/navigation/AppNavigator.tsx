@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import FeedScreen from '../screens/FeedScreen';
 import ChatListScreen from '../screens/messaging/ChatListScreen';
 import ProfileScreen from '../../screens/ProfileScreen';
 import { View, StyleSheet, Text } from 'react-native';
@@ -17,9 +18,9 @@ const AppNavigator = () => {
                     tabBarShowLabel: false,
                 }}
             >
-                <Tab.Screen 
-                    name="Feed" 
-                    component={PlaceholderScreen}
+                <Tab.Screen
+                    name="Feed"
+                    component={FeedScreen}
                     options={{
                         tabBarIcon: ({ focused }) => (
                             <View style={[styles.tabIcon, focused && styles.tabIconActive]} />
