@@ -15,6 +15,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import ConnectionsScreen from "./ConnectionsScreen";
 import { VideoGrid } from "../components/Profile/VideoGrid";
+import { signOut } from "../src/services/authService";
 
 export default function ProfileScreen() {
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);
@@ -200,7 +201,31 @@ export default function ProfileScreen() {
                     <TouchableOpacity
                         style={styles.settingsButton}
                         onPress={() =>
-                            Alert.alert("Settings", "Edit profile settings")
+                            Alert.alert(
+                                "Settings",
+                                "Choose an option",
+                                [
+                                    {
+                                        text: "Edit Profile",
+                                        onPress: () => console.log("Edit profile")
+                                    },
+                                    {
+                                        text: "Logout",
+                                        onPress: async () => {
+                                            try {
+                                                await signOut();
+                                            } catch (error) {
+                                                Alert.alert("Error", "Failed to logout");
+                                            }
+                                        },
+                                        style: "destructive"
+                                    },
+                                    {
+                                        text: "Cancel",
+                                        style: "cancel"
+                                    }
+                                ]
+                            )
                         }
                         accessibilityLabel="Edit profile settings"
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
