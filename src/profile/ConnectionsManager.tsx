@@ -9,7 +9,7 @@ import {
     TextInput,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Connection } from "../../types/profile";
+import { Connection } from "../types/profile";
 
 // Demo connections
 const defaultConnections: Connection[] = [];

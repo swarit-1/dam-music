@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
     Image,
 } from "react-native";
-import { Song } from "../../types/profile";
+import { Song } from "../types/profile";
 
 interface SongListProps {
     songs: Song[];

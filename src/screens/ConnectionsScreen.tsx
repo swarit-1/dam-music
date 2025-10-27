@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { ConnectionsManager } from "../components/Profile/ConnectionsManager";
+import { ConnectionsManager } from "../profile/ConnectionsManager";
 import { Connection } from "../types/profile";
 
 interface ConnectionsScreenProps {

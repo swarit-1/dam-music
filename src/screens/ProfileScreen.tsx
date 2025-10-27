@@ -11,13 +11,13 @@ import {
     TouchableOpacity,
     Alert,
 } from "react-native";
-import { SongList } from "../components/Profile/SongList";
-import { ConnectionsManager } from "../components/Profile/ConnectionsManager";
+import { SongList } from "../profile/SongList";
+import { ConnectionsManager } from "../profile/ConnectionsManager";
 import { Song, Connection, Profile } from "../types/profile";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import ConnectionsScreen from "./ConnectionsScreen";
-import { VideoGrid } from "../components/Profile/VideoGrid";
+import ConnectionsScreen from "../screens/ConnectionsScreen";
+import { VideoGrid } from "../profile/VideoGrid";
 
 export default function ProfileScreen() {
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);

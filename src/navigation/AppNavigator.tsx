@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
 import ChatListScreen from "../screens/messaging/ChatListScreen";
-import ProfileScreen from "../../screens/ProfileScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 import { View, StyleSheet, Text } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
