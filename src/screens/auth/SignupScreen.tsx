@@ -12,8 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { signUp } from '../../src/services/authService';
-import
+import { signUp } from '../../services/authService';
 
 export default function SignupScreen({ navigation }: any) {
   const [name, setName] = useState('');
