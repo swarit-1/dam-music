@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import {
     View,
+    SafeAreaView,
+    Platform,
+    StatusBar,
     Text,
     StyleSheet,
     ScrollView,
@@ -175,8 +178,10 @@ export default function ProfileScreen() {
         );
     };
 
+    // place the top action buttons below the OS status bar / safe area
+
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             {showConnectionsScreen ? (
                 <ConnectionsScreen
                     connections={profile.connections}
@@ -188,7 +193,7 @@ export default function ProfileScreen() {
                     {/* Top action buttons */}
                     {/* Upload (+) on the left */}
                     <TouchableOpacity
-                        style={styles.uploadButton}
+                        style={[styles.uploadButton]}
                         onPress={handlePickVideo}
                         accessibilityLabel="Upload video"
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -198,7 +203,7 @@ export default function ProfileScreen() {
 
                     {/* Settings (tune) on the right */}
                     <TouchableOpacity
-                        style={styles.settingsButton}
+                        style={[styles.settingsButton]}
                         onPress={() =>
                             Alert.alert("Settings", "Edit profile settings")
                         }
@@ -303,7 +308,7 @@ export default function ProfileScreen() {
                     </ScrollView>
                 </>
             )}
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -314,7 +319,7 @@ const styles = StyleSheet.create({
     },
     uploadButton: {
         position: "absolute",
-        top: 20,
+        top: 50,
         left: 20,
         zIndex: 10,
         width: 40,
@@ -331,7 +336,7 @@ const styles = StyleSheet.create({
     },
     settingsButton: {
         position: "absolute",
-        top: 20,
+        top: 50,
         right: 20,
         zIndex: 10,
         width: 40,

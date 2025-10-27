@@ -1,10 +1,11 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import FeedScreen from '../screens/FeedScreen';
-import ChatListScreen from '../screens/messaging/ChatListScreen';
-import ProfileScreen from '../../screens/ProfileScreen';
-import { View, StyleSheet, Text } from 'react-native';
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import FeedScreen from "../screens/FeedScreen";
+import ChatListScreen from "../screens/messaging/ChatListScreen";
+import ProfileScreen from "../../screens/ProfileScreen";
+import { View, StyleSheet, Text } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 
 const Tab = createBottomTabNavigator();
 
@@ -22,26 +23,38 @@ const AppNavigator = () => {
                     name="Feed"
                     component={FeedScreen}
                     options={{
-                        tabBarIcon: ({ focused }) => (
-                            <View style={[styles.tabIcon, focused && styles.tabIconActive]} />
+                        tabBarIcon: ({ focused, color, size }) => (
+                            <MaterialIcons
+                                name="home"
+                                size={24}
+                                color={focused ? "#007AFF" : "#8e8e93"}
+                            />
                         ),
                     }}
                 />
-                <Tab.Screen 
-                    name="Messages" 
+                <Tab.Screen
+                    name="Messages"
                     component={ChatListScreen}
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <View style={[styles.tabIcon, focused && styles.tabIconActive]} />
+                            <MaterialIcons
+                                name="chat-bubble"
+                                size={24}
+                                color={focused ? "#007AFF" : "#8e8e93"}
+                            />
                         ),
                     }}
                 />
-                <Tab.Screen 
-                    name="Profile" 
+                <Tab.Screen
+                    name="Profile"
                     component={ProfileScreen}
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <View style={[styles.tabIcon, focused && styles.tabIconActive]} />
+                            <MaterialIcons
+                                name="person"
+                                size={24}
+                                color={focused ? "#007AFF" : "#8e8e93"}
+                            />
                         ),
                     }}
                 />
@@ -67,25 +80,26 @@ const ProfilePlaceholderScreen = () => (
 const styles = StyleSheet.create({
     tabBar: {
         borderTopWidth: 1,
-        borderTopColor: '#eee',
-        backgroundColor: '#fff',
-        paddingVertical: 10,
-        height: 60,
+        borderTopColor: "#eee",
+        backgroundColor: "#fff",
+        paddingTop: 5,
+        paddingBottom: 10,
+        height: 50,
     },
     tabIcon: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#e0e0e0',
+        backgroundColor: "#e0e0e0",
     },
     tabIconActive: {
-        backgroundColor: '#c0c0c0',
+        backgroundColor: "#c0c0c0",
     },
     placeholder: {
         flex: 1,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: "#fff",
+        justifyContent: "center",
+        alignItems: "center",
     },
 });
 
