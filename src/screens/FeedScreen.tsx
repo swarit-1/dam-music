@@ -136,23 +136,7 @@ export default function FeedScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Action buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionIcon}>👤</Text>
-              <Text style={styles.actionLabel}>Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionIcon}>❤️</Text>
-              <Text style={styles.actionLabel}>Like</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionIcon}>💬</Text>
-              <Text style={styles.actionLabel}>Message</Text>
-            </TouchableOpacity>
-          </View>
+          
         </View>
       </View>
     );
