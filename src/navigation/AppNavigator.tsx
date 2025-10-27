@@ -4,20 +4,21 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FeedScreen from '../screens/FeedScreen';
 import ChatListScreen from '../screens/messaging/ChatListScreen';
 import ProfileScreen from '../../screens/ProfileScreen';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import AuthNavigator from './AuthNavigator';
 
 const Tab = createBottomTabNavigator();
 
-const AppNavigator = () => {
+const MainTabs = () => {
     return (
-        <NavigationContainer>
-            <Tab.Navigator
-                screenOptions={{
-                    headerShown: false,
-                    tabBarStyle: styles.tabBar,
-                    tabBarShowLabel: false,
-                }}
-            >
+        <Tab.Navigator
+            screenOptions={{
+                headerShown: false,
+                tabBarStyle: styles.tabBar,
+                tabBarShowLabel: false,
+            }}
+        >
                 <Tab.Screen
                     name="Feed"
                     component={FeedScreen}
@@ -46,6 +47,23 @@ const AppNavigator = () => {
                     }}
                 />
             </Tab.Navigator>
+    );
+};
+
+const AppNavigator = () => {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#9333ea" />
+            </View>
+        );
+    }
+
+    return (
+        <NavigationContainer>
+            {user ? <MainTabs /> : <AuthNavigator />}
         </NavigationContainer>
     );
 };
@@ -65,6 +83,12 @@ const ProfilePlaceholderScreen = () => (
 );
 
 const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        backgroundColor: '#0a0a0a',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     tabBar: {
         borderTopWidth: 1,
         borderTopColor: '#eee',
