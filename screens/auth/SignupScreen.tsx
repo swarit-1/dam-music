@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { signUp } from '../../src/services/authService';
-import
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 export default function SignupScreen({ navigation }: any) {
   const [name, setName] = useState('');
