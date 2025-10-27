@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { signIn } from '../../src/services/authService';
+import { signIn } from '../../services/authService';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
