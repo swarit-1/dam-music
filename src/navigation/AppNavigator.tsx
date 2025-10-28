@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
 import ChatListScreen from "../screens/messaging/ChatListScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import ManagementScreen from "../screens/ManagementScreen";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from '../contexts/AuthContext';
@@ -53,6 +54,19 @@ const MainTabs = () => {
                         tabBarIcon: ({ focused }) => (
                             <MaterialIcons
                                 name="person"
+                                size={24}
+                                color={focused ? "#007AFF" : "#8e8e93"}
+                            />
+                        ),
+                    }}
+                />
+                <Tab.Screen
+                    name="Management"
+                    component={ManagementScreen}
+                    options={{
+                        tabBarIcon: ({ focused }) => (
+                            <MaterialIcons
+                                name="admin-panel-settings"
                                 size={24}
                                 color={focused ? "#007AFF" : "#8e8e93"}
                             />
