@@ -48,6 +48,19 @@ const MainTabs = () => {
                     }}
                 />
                 <Tab.Screen
+                    name="Management"
+                    component={ManagementScreen}
+                    options={{
+                        tabBarIcon: ({ focused }) => (
+                            <MaterialIcons
+                                name="workspaces-outline"
+                                size={24}
+                                color={focused ? "#007AFF" : "#8e8e93"}
+                            />
+                        ),
+                    }}
+                />
+                <Tab.Screen
                     name="Profile"
                     component={ProfileScreen}
                     options={{
@@ -60,19 +73,7 @@ const MainTabs = () => {
                         ),
                     }}
                 />
-                <Tab.Screen
-                    name="Management"
-                    component={ManagementScreen}
-                    options={{
-                        tabBarIcon: ({ focused }) => (
-                            <MaterialIcons
-                                name="admin-panel-settings"
-                                size={24}
-                                color={focused ? "#007AFF" : "#8e8e93"}
-                            />
-                        ),
-                    }}
-                />
+            
             </Tab.Navigator>
     );
 };
