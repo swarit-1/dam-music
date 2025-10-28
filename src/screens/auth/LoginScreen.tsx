@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,34 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { signIn } from '../../services/authService';
+import { useGoogleAuth, handleGoogleSignIn } from '../../services/googleAuthService';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Google Sign-In
+  const { request, response, promptAsync } = useGoogleAuth();
+
+  useEffect(() => {
+    if (response) {
+      handleGoogleResponse();
+    }
+  }, [response]);
+
+  const handleGoogleResponse = async () => {
+    try {
+      setLoading(true);
+      await handleGoogleSignIn(response);
+      // Navigation handled by AuthContext
+    } catch (error: any) {
+      Alert.alert('Google Sign-In Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -31,6 +53,19 @@ export default function LoginScreen({ navigation }: any) {
       // Navigation will be handled by AuthContext
     } catch (error: any) {
       Alert.alert('Login Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (loading) return; // Prevent multiple calls
+    
+    try {
+      setLoading(true);
+      await promptAsync();
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -118,9 +153,19 @@ export default function LoginScreen({ navigation }: any) {
           </View>
 
           {/* Google Sign In */}
-          <TouchableOpacity style={styles.googleButton} disabled={loading}>
-            <MaterialIcons name="mail" size={20} color="#fff" />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          <TouchableOpacity 
+            style={[styles.googleButton, loading && styles.googleButtonDisabled]} 
+            onPress={handleGoogleSignIn}
+            disabled={loading || !request}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <MaterialIcons name="mail" size={20} color="#fff" />
+            )}
+            <Text style={styles.googleButtonText}>
+              {loading ? 'Signing in...' : 'Continue with Google'}
+            </Text>
           </TouchableOpacity>
 
           {/* Sign Up Link */}
@@ -245,6 +290,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     marginBottom: 24,
+  },
+  googleButtonDisabled: {
+    opacity: 0.6,
   },
   googleButtonText: {
     color: '#fff',

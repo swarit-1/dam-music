@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { signUp } from '../../services/authService';
+import { useGoogleAuth, handleGoogleSignIn } from '../../services/googleAuthService';
 
 export default function SignupScreen({ navigation }: any) {
   const [name, setName] = useState('');
@@ -22,6 +23,26 @@ export default function SignupScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Google Sign-In
+  const { request, response, promptAsync } = useGoogleAuth();
+
+  useEffect(() => {
+    if (response) {
+      handleGoogleResponse();
+    }
+  }, [response]);
+
+  const handleGoogleResponse = async () => {
+    try {
+      setLoading(true);
+      await handleGoogleSignIn(response);
+    } catch (error: any) {
+      Alert.alert('Google Sign-In Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignup = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -47,6 +68,14 @@ export default function SignupScreen({ navigation }: any) {
       Alert.alert('Signup Failed', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignInPress = async () => {
+    try {
+      await promptAsync();
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -169,7 +198,11 @@ export default function SignupScreen({ navigation }: any) {
             </View>
 
             {/* Google Sign Up */}
-            <TouchableOpacity style={styles.googleButton} disabled={loading}>
+            <TouchableOpacity 
+              style={styles.googleButton} 
+              onPress={handleGoogleSignInPress}
+              disabled={loading || !request}
+            >
               <MaterialIcons name="mail" size={20} color="#fff" />
               <Text style={styles.googleButtonText}>Continue with Google</Text>
             </TouchableOpacity>
