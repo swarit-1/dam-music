@@ -12,12 +12,14 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { signIn } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { bypassAuth } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -130,6 +132,16 @@ export default function LoginScreen({ navigation }: any) {
               <Text style={styles.signupLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Development Bypass Button */}
+          <TouchableOpacity
+            style={styles.bypassButton}
+            onPress={bypassAuth}
+            disabled={loading}
+          >
+            <MaterialIcons name="developer-mode" size={16} color="#666" />
+            <Text style={styles.bypassButtonText}>Dev: Skip Login</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -265,5 +277,22 @@ const styles = StyleSheet.create({
     color: '#9333ea',
     fontSize: 14,
     fontWeight: '600',
+  },
+  bypassButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  bypassButtonText: {
+    color: '#666',
+    fontSize: 12,
+    marginLeft: 6,
   },
 });
