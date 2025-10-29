@@ -21,6 +21,7 @@ import ConnectionsScreen from "../screens/ConnectionsScreen";
 import { VideoGrid } from "../profile/VideoGrid";
 import { signOut } from "../services/authService";
 import { Video, ResizeMode } from "expo-av";
+import * as VideoThumbnails from "expo-video-thumbnails";
 
 export default function ProfileScreen() {
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);
@@ -29,15 +30,15 @@ export default function ProfileScreen() {
         [
             {
                 uri: "https://www.w3schools.com/html/mov_bbb.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+1",
+                thumbnail: "https://picsum.photos/300/533?random=1",
             },
             {
                 uri: "https://www.w3schools.com/html/movie.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+2",
+                thumbnail: "https://picsum.photos/300/533?random=2",
             },
             {
                 uri: "https://www.w3schools.com/html/mov_bbb.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+3",
+                thumbnail: "https://picsum.photos/300/533?random=3",
             },
         ]
     );
@@ -45,7 +46,7 @@ export default function ProfileScreen() {
     const [profile, setProfile] = useState<Profile>({
         id: "1",
         username: "musiclover",
-        displayName: "Music Lover",
+        displayName: "Music Loverrr",
         bio: "Passionate about creating and sharing music 🎵",
         avatarUrl: undefined,
         songs: [],
@@ -130,7 +131,20 @@ export default function ProfileScreen() {
         });
         if (result.canceled) return;
         const asset = result.assets[0];
-        setVideos((prev) => [...prev, { uri: asset.uri }]);
+
+        try {
+            // Generate thumbnail from video
+            const thumbnail = await VideoThumbnails.getThumbnailAsync(asset.uri, {
+                time: 1000, // Get thumbnail at 1 second
+                quality: 0.5,
+            });
+
+            setVideos((prev) => [...prev, { uri: asset.uri, thumbnail: thumbnail.uri }]);
+        } catch (error) {
+            console.error("Error generating thumbnail:", error);
+            // Fallback: add video without thumbnail
+            setVideos((prev) => [...prev, { uri: asset.uri }]);
+        }
     };
 
     const handleDeleteSong = (songId: string) => {
