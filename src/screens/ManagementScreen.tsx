@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     Alert,
     FlatList,
+    LayoutAnimation,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -21,7 +22,7 @@ interface Collaboration {
 }
 
 const ManagementScreen = () => {
-    const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
+    const [expanded, setExpanded] = useState<string | null>(null);
 
     // Mock data for collaborations
     const collaborations: Collaboration[] = [
@@ -63,9 +64,7 @@ const ManagementScreen = () => {
         },
     ];
 
-    const filteredCollaborations = collaborations.filter(collab =>
-        activeTab === 'active' ? collab.status !== 'completed' : collab.status === 'completed'
-    );
+    const filteredCollaborations = collaborations.filter(collab => collab.status !== 'completed');
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -85,90 +84,68 @@ const ManagementScreen = () => {
         }
     };
 
-    const renderCollaboration = ({ item }: { item: Collaboration }) => (
-        <TouchableOpacity
-            style={styles.collabCard}
-            onPress={() => Alert.alert('Collaboration Details', `Open ${item.title} with ${item.partner}`)}
-        >
-            <View style={styles.collabHeader}>
-                <View style={styles.collabInfo}>
-                    <Text style={styles.collabTitle}>{item.title}</Text>
-                    <Text style={styles.collabPartner}>with {item.partner}</Text>
-                </View>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                    <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
-                </View>
-            </View>
 
-            <View style={styles.collabDetails}>
-                <View style={styles.genreTag}>
-                    <Text style={styles.genreText}>{item.genre}</Text>
-                </View>
-                <Text style={styles.lastActivity}>{item.lastActivity}</Text>
-            </View>
-
-            <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                    <View
-                        style={[styles.progressFill, { width: `${item.progress}%` }]}
+    const renderCollaboration = ({ item }: { item: Collaboration }) => {
+        const isExpanded = expanded === item.id;
+        return (
+            <View style={styles.collabCard}>
+                <TouchableOpacity
+                    style={styles.dropdownHeader}
+                    onPress={() => {
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                        setExpanded(isExpanded ? null : item.id);
+                    }}
+                    activeOpacity={0.8}
+                >
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.collabTitle}>{item.title}</Text>
+                    </View>
+                    <MaterialIcons
+                        name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        size={28}
+                        color="#222"
                     />
-                </View>
-                <Text style={styles.progressText}>{item.progress}%</Text>
+                </TouchableOpacity>
+
+                {isExpanded && (
+                    <View style={styles.dropdownContent}>
+                        <View style={styles.collabDetailsColumn}>
+                            <View style={[styles.infoRow, styles.infoFirst]}>
+                                <Text style={styles.infoLabel}>Last Updated:</Text>
+                                <Text style={styles.infoValue}>10/13/2025</Text>
+                            </View>
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Current Stage:</Text>
+                                <Text style={styles.infoValue}>Demo/Recording</Text>
+                            </View>
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Collaborators:</Text>
+                                <Text style={styles.infoValue}>{item.partner}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.todoRow}>
+                            <View style={styles.todoCol}>
+                                <Text style={styles.todoLabel}>To Do: Party A</Text>
+                                <View style={styles.todoBox} />
+                                <View style={styles.todoBox} />
+                            </View>
+                            <View style={styles.todoCol}>
+                                <Text style={styles.todoLabel}>To Do: Party B</Text>
+                                <View style={styles.todoBox} />
+                                <View style={styles.todoBox} />
+                            </View>
+                        </View>
+                    </View>
+                )}
             </View>
-
-            <View style={styles.collabActions}>
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => Alert.alert('Messages', `Chat with ${item.partner}`)}
-                >
-                    <MaterialIcons name="chat" size={16} color="#007AFF" />
-                    <Text style={styles.actionText}>Chat</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => Alert.alert('Files', 'View shared files')}
-                >
-                    <MaterialIcons name="folder" size={16} color="#007AFF" />
-                    <Text style={styles.actionText}>Files</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => Alert.alert('Timeline', 'View project timeline')}
-                >
-                    <MaterialIcons name="timeline" size={16} color="#007AFF" />
-                    <Text style={styles.actionText}>Timeline</Text>
-                </TouchableOpacity>
-            </View>
-        </TouchableOpacity>
-    );
+        );
+    };
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Collaborations</Text>
+                <Text style={styles.headerTitle}>Work Flow</Text>
                 <Text style={styles.headerSubtitle}>Manage your music projects</Text>
-            </View>
-
-            {/* Tab Switcher */}
-            <View style={styles.tabContainer}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'active' && styles.activeTab]}
-                    onPress={() => setActiveTab('active')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>
-                        Active ({collaborations.filter(c => c.status !== 'completed').length})
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'completed' && styles.activeTab]}
-                    onPress={() => setActiveTab('completed')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'completed' && styles.activeTabText]}>
-                        Completed ({collaborations.filter(c => c.status === 'completed').length})
-                    </Text>
-                </TouchableOpacity>
             </View>
 
             {/* Quick Actions */}
@@ -209,13 +186,10 @@ const ManagementScreen = () => {
                     <View style={styles.emptyState}>
                         <MaterialIcons name="music-note" size={48} color="#ccc" />
                         <Text style={styles.emptyTitle}>
-                            {activeTab === 'active' ? 'No active collaborations' : 'No completed projects'}
+                            No active collaborations
                         </Text>
                         <Text style={styles.emptySubtitle}>
-                            {activeTab === 'active'
-                                ? 'Start a new music collaboration to get started!'
-                                : 'Complete some projects to see them here.'
-                            }
+                            Start a new music collaboration to get started!
                         </Text>
                     </View>
                 }
@@ -242,10 +216,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#1a1a1a',
         marginBottom: 4,
+        textAlign: 'center',
     },
     headerSubtitle: {
         fontSize: 16,
         color: '#6c757d',
+        textAlign: 'center',
     },
     tabContainer: {
         flexDirection: 'row',
@@ -305,15 +281,64 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     collabCard: {
-        backgroundColor: '#fff',
+        backgroundColor: '#f3f3f3',
         borderRadius: 12,
-        padding: 16,
         marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        overflow: 'hidden',
+    },
+    dropdownHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 18,
+        backgroundColor: '#fff',
+    },
+    dropdownContent: {
+        backgroundColor: '#f3f3f3',
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    infoRow: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        marginBottom: 12,
+        width: '100%',
+    },
+    infoLabel: {
+        fontWeight: '600',
+        color: '#444',
+        fontSize: 14,
+        marginBottom: 4,
+    },
+    infoValue: {
+        color: '#222',
+        fontSize: 14,
+    },
+    infoFirst: {
+        paddingTop: 8,
+    },
+    todoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 12,
+    },
+    todoCol: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    todoLabel: {
+        fontWeight: '600',
+        color: '#444',
+        fontSize: 13,
+        marginBottom: 6,
+    },
+    todoBox: {
+        width: 70,
+        height: 20,
+        backgroundColor: '#d1d5db',
+        borderRadius: 6,
+        marginBottom: 6,
     },
     collabHeader: {
         flexDirection: 'row',
@@ -421,6 +446,14 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
         textAlign: 'center',
         paddingHorizontal: 40,
+    },
+    separator: {
+        height: 1,
+        backgroundColor: '#d1d5db',
+        marginVertical: 6,
+    },
+    collabDetailsColumn: {
+        flexDirection: 'column',
     },
 });
 
