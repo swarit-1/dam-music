@@ -2,7 +2,7 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
-import ChatListScreen from "../screens/messaging/ChatListScreen";
+import MessagingNavigator from "./MessagingNavigator";
 import ProfileScreen from "../screens/ProfileScreen";
 import ManagementScreen from "../screens/ManagementScreen";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
@@ -36,7 +36,7 @@ const MainTabs = () => {
                 />
                 <Tab.Screen
                     name="Messages"
-                    component={ChatListScreen}
+                    component={MessagingNavigator}
                     options={{
                         tabBarIcon: ({ focused }) => (
                             <MaterialIcons
