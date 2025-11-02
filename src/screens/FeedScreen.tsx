@@ -4,6 +4,7 @@ import {
     Text,
     FlatList,
     StyleSheet,
+    PanResponder,
     Dimensions,
     TouchableOpacity,
     ActivityIndicator,
@@ -15,13 +16,26 @@ import { mockUser, mockPosts } from "../data/mockData";
 import { audioService } from "../services/audioService";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const TAB_BAR_HEIGHT = 60; // matches AppNavigator tabBar height
+const ITEM_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
 
 export default function FeedScreen() {
     const [posts, setPosts] = useState<ScoredPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
+    // Control whether the list accepts new scroll gestures. We briefly lock scrolling
+    // while momentum from a flick is settling to create a small "hitch" and force
+    // the user to pause on each item if they want to move on.
+    const [canScroll, setCanScroll] = useState(true);
     const flatListRef = useRef<FlatList>(null);
+    // Track the index at the start of the user's drag so we can clamp
+    // any momentum-based jump to at most one item away.
+    const startIndexRef = useRef<number>(0);
+    // keep a ref copy of currentIndex for gesture handlers
+    const currentIndexRef = useRef<number>(0);
+    // pan responder used to implement slide-style (one card at a time)
+    const panResponderRef = useRef<any>(null);
     const isFocused = useIsFocused();
 
     useEffect(() => {
@@ -30,6 +44,57 @@ export default function FeedScreen() {
             audioService.cleanup();
         };
     }, []);
+
+    // keep currentIndexRef in sync
+    useEffect(() => {
+        currentIndexRef.current = currentIndex;
+    }, [currentIndex]);
+
+    // create PanResponder once
+    useEffect(() => {
+        panResponderRef.current = PanResponder.create({
+            onStartShouldSetPanResponder: () => false,
+            onMoveShouldSetPanResponder: (_evt, gestureState) => {
+                // start handling when user has moved enough vertically
+                return Math.abs(gestureState.dy) > 8;
+            },
+            onPanResponderGrant: () => {
+                // record start index
+                startIndexRef.current = currentIndexRef.current;
+                // while the user is dragging, disallow FlatList scroll (we'll control it)
+                setCanScroll(false);
+            },
+            onPanResponderMove: () => {
+                // noop — we don't show partial next card
+            },
+            onPanResponderRelease: (_evt, gestureState) => {
+                const dy = gestureState.dy;
+                const vy = gestureState.vy;
+                const start = startIndexRef.current ?? currentIndexRef.current;
+                let next = start;
+
+                // if user swiped up (negative dy) move to next, down move to prev
+                const threshold = 30; // px threshold to count as a slide
+                if (dy < -threshold || vy < -0.3) {
+                    next = Math.min(
+                        start + 1,
+                        Math.max(0, (posts.length || 1) - 1)
+                    );
+                } else if (dy > threshold || vy > 0.3) {
+                    next = Math.max(start - 1, 0);
+                }
+
+                // programmatically scroll to the chosen index
+                flatListRef.current?.scrollToOffset({
+                    offset: next * ITEM_HEIGHT,
+                    animated: true,
+                });
+                setCurrentIndex(next);
+                // re-enable gestures after tiny delay
+                setTimeout(() => setCanScroll(true), 50);
+            },
+        });
+    }, [posts.length]);
 
     useEffect(() => {
         // Play audio for current post
@@ -174,6 +239,31 @@ export default function FeedScreen() {
         );
     };
 
+    const onMomentumScrollEnd = (event: any) => {
+        const offsetY = event.nativeEvent.contentOffset.y ?? 0;
+        const rawIndex = Math.round(offsetY / ITEM_HEIGHT);
+        const start =
+            typeof startIndexRef.current === "number"
+                ? startIndexRef.current
+                : currentIndex;
+
+        // Allow at most one-item movement per gesture
+        const clamped = Math.max(Math.min(rawIndex, start + 1), start - 1);
+
+        if (clamped !== rawIndex) {
+            // snap to the clamped index
+            flatListRef.current?.scrollToOffset({
+                offset: clamped * ITEM_HEIGHT,
+                animated: true,
+            });
+        }
+
+        // ensure our index state matches the final visible item
+        setCurrentIndex(clamped);
+        // re-enable scrolling in case it was disabled during momentum
+        setCanScroll(true);
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -184,7 +274,10 @@ export default function FeedScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <View
+            style={styles.container}
+            {...(panResponderRef.current?.panHandlers ?? {})}
+        >
             <FlatList
                 ref={flatListRef}
                 data={posts}
@@ -192,16 +285,19 @@ export default function FeedScreen() {
                 keyExtractor={(item) => item.id}
                 pagingEnabled
                 showsVerticalScrollIndicator={false}
-                snapToInterval={SCREEN_HEIGHT}
-                snapToAlignment="start"
-                decelerationRate="fast"
+                // we handle snapping programmatically via the pan responder so
+                // prevent the FlatList from accepting native scroll gestures
+                scrollEnabled={false}
+                // Lower decelerationRate is ignored since native scroll is disabled,
+                // but we keep pagingEnabled so programmatic scrolls look natural.
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
                 getItemLayout={(data, index) => ({
-                    length: SCREEN_HEIGHT,
-                    offset: SCREEN_HEIGHT * index,
+                    length: ITEM_HEIGHT,
+                    offset: ITEM_HEIGHT * index,
                     index,
                 })}
+                contentContainerStyle={{ paddingBottom: 0 }}
             />
         </View>
     );
@@ -224,7 +320,7 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     postContainer: {
-        height: SCREEN_HEIGHT,
+        height: ITEM_HEIGHT,
         width: "100%",
         position: "relative",
     },
@@ -236,7 +332,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "flex-end",
         padding: 20,
-        paddingBottom: 40,
+        paddingBottom: 0,
     },
     matchBadge: {
         position: "absolute",
