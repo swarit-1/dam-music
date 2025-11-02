@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { colors } from "../theme/colors";
 import { ConnectionsManager } from "../profile/ConnectionsManager";
 import { Connection } from "../types/profile";
 
@@ -24,7 +25,11 @@ export default function ConnectionsScreen({
                 accessibilityLabel="Go back"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-                <MaterialIcons name="arrow-back" size={26} color="#111" />
+                <MaterialIcons
+                    name="arrow-back"
+                    size={26}
+                    color={colors.surfaceMid}
+                />
             </TouchableOpacity>
 
             <ScrollView style={styles.scrollView}>
@@ -40,7 +45,7 @@ export default function ConnectionsScreen({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
     },
     backButton: {
         position: "absolute",

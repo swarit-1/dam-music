@@ -15,6 +15,7 @@ import { SongList } from "../profile/SongList";
 import { ConnectionsManager } from "../profile/ConnectionsManager";
 import { Song, Connection, Profile } from "../types/profile";
 import { MaterialIcons } from "@expo/vector-icons";
+import { colors } from "../theme/colors";
 import * as ImagePicker from "expo-image-picker";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
 import { VideoGrid } from "../profile/VideoGrid";
@@ -199,43 +200,50 @@ export default function ProfileScreen() {
                         accessibilityLabel="Upload video"
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <MaterialIcons name="add" size={28} color="#111" />
+                        <MaterialIcons
+                            name="add"
+                            size={28}
+                            color={colors.surfaceMid}
+                        />
                     </TouchableOpacity>
 
                     {/* Settings (tune) on the right */}
                     <TouchableOpacity
                         style={[styles.settingsButton]}
                         onPress={() =>
-                            Alert.alert(
-                                "Settings",
-                                "Choose an option",
-                                [
-                                    {
-                                        text: "Edit Profile",
-                                        onPress: () => console.log("Edit profile")
+                            Alert.alert("Settings", "Choose an option", [
+                                {
+                                    text: "Edit Profile",
+                                    onPress: () => console.log("Edit profile"),
+                                },
+                                {
+                                    text: "Logout",
+                                    onPress: async () => {
+                                        try {
+                                            await signOut();
+                                        } catch (error) {
+                                            Alert.alert(
+                                                "Error",
+                                                "Failed to logout"
+                                            );
+                                        }
                                     },
-                                    {
-                                        text: "Logout",
-                                        onPress: async () => {
-                                            try {
-                                                await signOut();
-                                            } catch (error) {
-                                                Alert.alert("Error", "Failed to logout");
-                                            }
-                                        },
-                                        style: "destructive"
-                                    },
-                                    {
-                                        text: "Cancel",
-                                        style: "cancel"
-                                    }
-                                ]
-                            )
+                                    style: "destructive",
+                                },
+                                {
+                                    text: "Cancel",
+                                    style: "cancel",
+                                },
+                            ])
                         }
                         accessibilityLabel="Edit profile settings"
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <MaterialIcons name="tune" size={26} color="#111" />
+                        <MaterialIcons
+                            name="tune"
+                            size={26}
+                            color={colors.surfaceMid}
+                        />
                     </TouchableOpacity>
 
                     <ScrollView>
@@ -269,7 +277,7 @@ export default function ProfileScreen() {
                                     <MaterialIcons
                                         name="edit"
                                         size={16}
-                                        color="#fff"
+                                        color={colors.white}
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -340,7 +348,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
     },
     uploadButton: {
         position: "absolute",
@@ -352,8 +360,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 20,
-        backgroundColor: "#fff",
-        shadowColor: "#000",
+        backgroundColor: colors.white,
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 1,
@@ -386,14 +394,14 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: "#007AFF",
+        backgroundColor: colors.brandPurple,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 15,
         alignSelf: "center",
     },
     avatarText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 40,
         fontWeight: "600",
     },
@@ -404,17 +412,17 @@ const styles = StyleSheet.create({
     displayName: {
         fontSize: 24,
         fontWeight: "bold",
-        color: "#333",
+        color: colors.surfaceMid,
         marginBottom: 4,
     },
     username: {
         fontSize: 16,
-        color: "#666",
+        color: colors.gray500,
         marginBottom: 8,
     },
     bio: {
         fontSize: 14,
-        color: "#666",
+        color: colors.gray500,
         textAlign: "center",
         marginTop: 8,
         paddingHorizontal: 20,
@@ -430,20 +438,20 @@ const styles = StyleSheet.create({
     },
     editProfileButton: {
         flex: 1,
-        backgroundColor: "#007AFF",
+        backgroundColor: colors.brandPurple,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 8,
         alignItems: "center",
     },
     editProfileText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 14,
         fontWeight: "600",
     },
     connectionsButton: {
         flex: 1,
-        backgroundColor: "#f0f0f0",
+        backgroundColor: colors.gray100,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 8,
@@ -452,7 +460,7 @@ const styles = StyleSheet.create({
     connectionsNumber: {
         fontSize: 14,
         fontWeight: "bold",
-        color: "#444",
+        color: colors.surfaceMid,
     },
     stats: {
         flexDirection: "row",
@@ -466,22 +474,22 @@ const styles = StyleSheet.create({
     statNumber: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#333",
+        color: colors.surfaceMid,
     },
     statLabel: {
         fontSize: 14,
-        color: "#666",
+        color: colors.gray500,
         marginTop: 4,
     },
     editButton: {
-        backgroundColor: "#007AFF",
+        backgroundColor: colors.brandPurple,
         paddingVertical: 10,
         paddingHorizontal: 30,
         borderRadius: 20,
         alignSelf: "center",
     },
     editButtonText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 14,
         fontWeight: "600",
     },
@@ -496,15 +504,15 @@ const styles = StyleSheet.create({
         position: "absolute",
         right: 0,
         bottom: 0,
-        backgroundColor: "#ccc",
+        backgroundColor: colors.gray300,
         borderRadius: 14,
         width: 28,
         height: 28,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 2,
-        borderColor: "#fff",
-        shadowColor: "#000",
+        borderColor: colors.white,
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.15,
         shadowRadius: 2,

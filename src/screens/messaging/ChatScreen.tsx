@@ -1,26 +1,59 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from "react";
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    TouchableOpacity,
+    TextInput,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { colors } from "../../theme/colors";
 
 const messages = [
-    { id: '1', text: 'Hey! How are you?', senderName: 'Bob Grand', senderId: 'other', timestamp: new Date() },
-    { id: '2', text: "I'm good, thanks! Working on some new beats.", senderName: 'John Doe', senderId: 'me', timestamp: new Date() },
-    { id: '3', text: 'That sounds awesome! Can I hear them?', senderName: 'Bob Grand', senderId: 'other', timestamp: new Date() },
+    {
+        id: "1",
+        text: "Hey! How are you?",
+        senderName: "Bob Grand",
+        senderId: "other",
+        timestamp: new Date(),
+    },
+    {
+        id: "2",
+        text: "I'm good, thanks! Working on some new beats.",
+        senderName: "John Doe",
+        senderId: "me",
+        timestamp: new Date(),
+    },
+    {
+        id: "3",
+        text: "That sounds awesome! Can I hear them?",
+        senderName: "Bob Grand",
+        senderId: "other",
+        timestamp: new Date(),
+    },
 ];
 
 const ChatScreen = () => {
-
-    const renderMessage = ({ item }: {item: typeof messages[0]}) => (
-        <View style={[styles.messageBubble, item.senderId === 'me' ? styles.sentMessage : styles.receivedMessage]}>
+    const renderMessage = ({ item }: { item: (typeof messages)[0] }) => (
+        <View
+            style={[
+                styles.messageBubble,
+                item.senderId === "me"
+                    ? styles.sentMessage
+                    : styles.receivedMessage,
+            ]}
+        >
             <View style={styles.messageHeader}>
                 <Text style={styles.senderName}>{item.senderName}</Text>
                 <Text style={styles.timestamp}>
-                    {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {item.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })}
                 </Text>
             </View>
-            <Text style={[styles.messageText]}>
-                {item.text}
-            </Text>
+            <Text style={[styles.messageText]}>{item.text}</Text>
         </View>
     );
 
@@ -38,7 +71,10 @@ const ChatScreen = () => {
     const InputComponent = () => {
         return (
             <View style={styles.inputContainer}>
-                <TextInput style={styles.input} placeholder="Type your message..." />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Type your message..."
+                />
                 <TouchableOpacity style={styles.sendButton}>
                     <Text style={styles.sendButtonText}>Send</Text>
                 </TouchableOpacity>
@@ -49,10 +85,10 @@ const ChatScreen = () => {
     return (
         <View style={styles.container}>
             <HeaderComponent />
-            <FlatList 
-                data={messages} 
-                renderItem={renderMessage} 
-                keyExtractor={(item) => item.id} 
+            <FlatList
+                data={messages}
+                renderItem={renderMessage}
+                keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.messageList}
             />
             <InputComponent />
@@ -63,80 +99,80 @@ const ChatScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',    
+        backgroundColor: colors.white,
     },
     messageBubble: {
-        maxWidth: '80%',
+        maxWidth: "80%",
         padding: 10,
         borderRadius: 10,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: colors.gray100,
     },
     messageText: {
         fontSize: 16,
-        color: '#000',
+        color: colors.black,
     },
     sentMessage: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#007AFF',
-        color: '#fff',
+        alignSelf: "flex-end",
+        backgroundColor: colors.brandPurple,
+        color: colors.white,
     },
     receivedMessage: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#f0f0f0',
-        color: '#000',
+        alignSelf: "flex-start",
+        backgroundColor: colors.gray100,
+        color: colors.black,
     },
     timestamp: {
         fontSize: 12,
-        color: '#888',
-        textAlign: 'right',
+        color: colors.gray400,
+        textAlign: "right",
     },
     inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         padding: 10,
         borderTopWidth: 1,
-        borderTopColor: '#eee',
+        borderTopColor: colors.gray100,
     },
     bottomNav: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-around",
+        alignItems: "center",
         paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: '#eee',
-        backgroundColor: '#fff',
+        borderTopColor: colors.gray100,
+        backgroundColor: colors.white,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
         paddingHorizontal: 15,
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: colors.gray100,
     },
     messageHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         marginBottom: 5,
     },
     senderName: {
         fontSize: 14,
-        fontWeight: 'bold',
-        color: '#000',
+        fontWeight: "bold",
+        color: colors.black,
     },
     backButton: {
         padding: 5,
     },
     backButtonText: {
         fontSize: 16,
-        color: '#000',
+        color: colors.black,
     },
     title: {
         fontSize: 20,
-        fontWeight: 'bold',
-        color: '#000',
+        fontWeight: "bold",
+        color: colors.black,
     },
     messageList: {
         paddingHorizontal: 15,
@@ -146,7 +182,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 40,
         borderWidth: 1,
-        borderColor: '#eee',
+        borderColor: colors.gray100,
         borderRadius: 10,
         paddingHorizontal: 10,
     },
@@ -155,8 +191,8 @@ const styles = StyleSheet.create({
     },
     sendButtonText: {
         fontSize: 16,
-        color: '#000',
+        color: colors.black,
     },
 });
 
-export default ChatScreen
+export default ChatScreen;
