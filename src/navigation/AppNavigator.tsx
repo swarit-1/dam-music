@@ -2,7 +2,7 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
-import ChatListScreen from "../screens/messaging/ChatListScreen";
+import MessagingNavigator from "./MessagingNavigator";
 import ProfileScreen from "../screens/ProfileScreen";
 import ManagementScreen from "../screens/ManagementScreen";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
@@ -10,6 +10,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import AuthNavigator from "./AuthNavigator";
 import { colors } from "../theme/colors";
+import ChatListScreen from "../screens/messaging/ChatListScreen";
 
 const Tab = createBottomTabNavigator();
 

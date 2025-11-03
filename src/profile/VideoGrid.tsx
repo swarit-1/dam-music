@@ -20,7 +20,7 @@ interface VideoGridProps {
 
 const { width } = Dimensions.get("window");
 const ITEM_MARGIN = 8;
-const NUM_COLUMNS = 3;
+const NUM_COLUMNS = 2;
 // Each item gets margin on both sides, so total margin per row is NUM_COLUMNS * ITEM_MARGIN
 const ITEM_WIDTH = (width - ITEM_MARGIN * NUM_COLUMNS) / NUM_COLUMNS;
 const ITEM_HEIGHT = (ITEM_WIDTH / 9) * 16;
@@ -33,38 +33,27 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
     onVideoPress,
     maxVideos = 3,
 }) => {
-    const showAdd = videos.length < maxVideos;
-    const gridItems = showAdd ? [...videos, { uri: "__add__" }] : videos;
+    const gridItems = [...videos, { uri: "__upgrade__" }];
 
     return (
         <View>
             <View style={styles.grid}>
                 {gridItems.map((video, idx) => {
-                    if (video.uri === "__add__") {
+                    if (video.uri === "__upgrade__") {
                         return (
-                            <TouchableOpacity
-                                key="add"
-                                style={styles.item}
-                                onPress={() => {
-                                    if (videos.length >= maxVideos) {
-                                        Alert.alert(
-                                            "Upgrade Required",
-                                            "Upgrade to premium to upload more than 3 videos."
-                                        );
-                                    } else {
-                                        onAddVideo();
-                                    }
-                                }}
-                                accessibilityLabel="Add video"
-                            >
-                                <View style={styles.addButton}>
-                                    <MaterialIcons
-                                        name="add"
-                                        size={40}
-                                        color="#aaa"
+                            <View key="upgrade" style={styles.item}>
+                                <View style={styles.premiumBlurbContainer}>
+                                    <MaterialCommunityIcons
+                                        name="crown-outline"
+                                        size={28}
+                                        color="#b8860b"
+                                        style={styles.crownIcon}
                                     />
+                                    <Text style={styles.premiumBlurbText}>
+                                        Upgrade to premium to upload more videos.
+                                    </Text>
                                 </View>
-                            </TouchableOpacity>
+                            </View>
                         );
                     }
                     return (
@@ -81,24 +70,17 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
                                 style={styles.videoThumb}
                                 resizeMode="cover"
                             />
+                            <View style={styles.playOverlay}>
+                                <MaterialIcons
+                                    name="play-circle-filled"
+                                    size={40}
+                                    color="rgba(255,255,255,0.8)"
+                                />
+                            </View>
                         </TouchableOpacity>
                     );
                 })}
             </View>
-            {/* Blurb if max videos reached */}
-            {videos.length >= maxVideos && (
-                <View style={styles.premiumBlurbContainer}>
-                    <MaterialCommunityIcons
-                        name="crown-outline"
-                        size={28}
-                        color="#b8860b"
-                        style={styles.crownIcon}
-                    />
-                    <Text style={styles.premiumBlurbText}>
-                        Upgrade to premium to upload more videos.
-                    </Text>
-                </View>
-            )}
         </View>
     );
 };
@@ -113,14 +95,12 @@ const styles = StyleSheet.create({
     item: {
         width: ITEM_WIDTH,
         height: ITEM_HEIGHT,
-        borderRadius: 0,
+        borderRadius: 12,
         overflow: "hidden",
         alignItems: "center",
         justifyContent: "center",
-        borderRightWidth: 1,
-        borderBottomWidth: 1,
-        borderColor: "transparent",
         margin: ITEM_MARGIN / 2,
+        borderWidth: 0,
     },
     videoThumb: {
         width: "100%",
@@ -136,26 +116,36 @@ const styles = StyleSheet.create({
         backgroundColor: "#eaeaea",
     },
     premiumBlurbContainer: {
-        marginTop: 16,
+        flex: 1,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "#fffbe6",
         borderWidth: 1,
         borderColor: "#ffe58f",
-        borderRadius: 8,
+        borderRadius: 12,
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        textAlign: "center",
-        marginHorizontal: 12,
+        paddingVertical: 16,
+        margin: 0,
     },
     premiumBlurbText: {
         marginVertical: 4,
         color: "#b8860b",
         fontSize: 15,
         fontWeight: "600",
+        textAlign: "center",
     },
     crownIcon: {
         marginBottom: 2,
         textAlign: "center",
+    },
+    playOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.2)",
     },
 });

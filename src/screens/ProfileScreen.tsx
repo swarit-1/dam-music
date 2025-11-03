@@ -10,6 +10,7 @@ import {
     Image,
     TouchableOpacity,
     Alert,
+    Modal,
 } from "react-native";
 import { SongList } from "../profile/SongList";
 import { ConnectionsManager } from "../profile/ConnectionsManager";
@@ -20,22 +21,25 @@ import * as ImagePicker from "expo-image-picker";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
 import { VideoGrid } from "../profile/VideoGrid";
 import { signOut } from "../services/authService";
+import { Video, ResizeMode } from "expo-av";
+import * as VideoThumbnails from "expo-video-thumbnails";
 
 export default function ProfileScreen() {
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);
+    const [selectedVideo, setSelectedVideo] = useState<{ uri: string } | null>(null);
     const [videos, setVideos] = useState<{ uri: string; thumbnail?: string }[]>(
         [
             {
                 uri: "https://www.w3schools.com/html/mov_bbb.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+1",
+                thumbnail: "https://picsum.photos/300/533?random=1",
             },
             {
                 uri: "https://www.w3schools.com/html/movie.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+2",
+                thumbnail: "https://picsum.photos/300/533?random=2",
             },
             {
                 uri: "https://www.w3schools.com/html/mov_bbb.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+3",
+                thumbnail: "https://picsum.photos/300/533?random=3",
             },
         ]
     );
@@ -43,7 +47,7 @@ export default function ProfileScreen() {
     const [profile, setProfile] = useState<Profile>({
         id: "1",
         username: "musiclover",
-        displayName: "Music Lover",
+        displayName: "Music Loverrr",
         bio: "Passionate about creating and sharing music 🎵",
         avatarUrl: undefined,
         songs: [],
@@ -128,7 +132,20 @@ export default function ProfileScreen() {
         });
         if (result.canceled) return;
         const asset = result.assets[0];
-        setVideos((prev) => [...prev, { uri: asset.uri }]);
+
+        try {
+            // Generate thumbnail from video
+            const thumbnail = await VideoThumbnails.getThumbnailAsync(asset.uri, {
+                time: 1000, // Get thumbnail at 1 second
+                quality: 0.5,
+            });
+
+            setVideos((prev) => [...prev, { uri: asset.uri, thumbnail: thumbnail.uri }]);
+        } catch (error) {
+            console.error("Error generating thumbnail:", error);
+            // Fallback: add video without thumbnail
+            setVideos((prev) => [...prev, { uri: asset.uri }]);
+        }
     };
 
     const handleDeleteSong = (songId: string) => {
@@ -422,6 +439,7 @@ export default function ProfileScreen() {
                         <VideoGrid
                             videos={videos}
                             onAddVideo={handleAddVideo}
+                            onVideoPress={(index) => setSelectedVideo(videos[index])}
                         />
                         {/* Song List: only show if no videos */}
                         {videos.length === 0 && (
@@ -432,6 +450,27 @@ export default function ProfileScreen() {
                             />
                         )}
                     </ScrollView>
+
+                    {/* Video Modal */}
+                    {selectedVideo && (
+                        <Modal visible={true} animationType="slide">
+                            <View style={styles.videoContainer}>
+                                <TouchableOpacity
+                                    onPress={() => setSelectedVideo(null)}
+                                    style={styles.closeButton}
+                                >
+                                    <MaterialIcons name="close" size={30} color="#fff" />
+                                </TouchableOpacity>
+                                <Video
+                                    source={{ uri: selectedVideo.uri }}
+                                    style={styles.videoPlayer}
+                                    useNativeControls
+                                    resizeMode={ResizeMode.CONTAIN}
+                                    shouldPlay
+                                />
+                            </View>
+                        </Modal>
+                    )}
                 </>
             )}
         </SafeAreaView>
@@ -610,5 +649,24 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 2,
         elevation: 2,
+    },
+    videoContainer: {
+        flex: 1,
+        backgroundColor: "#000",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    videoPlayer: {
+        width: "100%",
+        height: "100%",
+    },
+    closeButton: {
+        position: "absolute",
+        top: 50,
+        right: 20,
+        zIndex: 10,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        borderRadius: 20,
+        padding: 10,
     },
 });
