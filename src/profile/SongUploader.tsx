@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { colors } from "../theme/colors";
 import * as DocumentPicker from "expo-document-picker";
 
 interface SongUploaderProps {
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
         paddingHorizontal: 16,
         marginHorizontal: 16,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: colors.gray100,
         borderRadius: 10,
         marginBottom: 20,
     },
@@ -78,27 +79,27 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "bold",
         marginBottom: 15,
-        color: "#333",
+        color: colors.surfaceMid,
     },
     uploadButton: {
-        backgroundColor: "#007AFF",
+        backgroundColor: colors.brandPurple,
         padding: 15,
         borderRadius: 8,
         alignItems: "center",
         justifyContent: "center",
     },
     uploadButtonDisabled: {
-        backgroundColor: "#ccc",
+        backgroundColor: colors.gray300,
     },
     uploadButtonText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 16,
         fontWeight: "600",
     },
     supportedFormats: {
         marginTop: 10,
         fontSize: 12,
-        color: "#666",
+        color: colors.gray500,
         textAlign: "center",
     },
 });

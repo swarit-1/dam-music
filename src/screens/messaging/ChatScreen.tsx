@@ -5,6 +5,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MessagingStackParamList } from '../../navigation/MessagingNavigator';
 import { MaterialIcons } from '@expo/vector-icons';
+import { colors } from '../../theme/colors';
 
 const ChatScreen = () => {
     const navigation = useNavigation<StackNavigationProp<MessagingStackParamList>>();
@@ -16,12 +17,13 @@ const ChatScreen = () => {
             <View style={styles.messageHeader}>
                 <Text style={styles.senderName}>{item.senderName}</Text>
                 <Text style={styles.timestamp}>
-                    {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {item.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })}
                 </Text>
             </View>
-            <Text style={[styles.messageText]}>
-                {item.text}
-            </Text>
+            <Text style={[styles.messageText]}>{item.text}</Text>
         </View>
     );
 
@@ -83,7 +85,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     messageBubble: {
-        maxWidth: '80%',
+        maxWidth: "80%",
         padding: 10,
         borderRadius: 10,
         backgroundColor: '#f0f0f0',
@@ -91,59 +93,59 @@ const styles = StyleSheet.create({
     },
     messageText: {
         fontSize: 16,
-        color: '#000',
+        color: colors.black,
     },
     sentMessage: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#007AFF',
-        color: '#fff',
+        alignSelf: "flex-end",
+        backgroundColor: colors.brandPurple,
+        color: colors.white,
     },
     receivedMessage: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#f0f0f0',
-        color: '#000',
+        alignSelf: "flex-start",
+        backgroundColor: colors.gray100,
+        color: colors.black,
     },
     timestamp: {
         fontSize: 12,
-        color: '#888',
-        textAlign: 'right',
+        color: colors.gray400,
+        textAlign: "right",
     },
     inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         padding: 10,
         borderTopWidth: 1,
-        borderTopColor: '#eee',
+        borderTopColor: colors.gray100,
     },
     bottomNav: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-around",
+        alignItems: "center",
         paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: '#eee',
-        backgroundColor: '#fff',
+        borderTopColor: colors.gray100,
+        backgroundColor: colors.white,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
         paddingHorizontal: 15,
         paddingVertical: 15,
         paddingTop: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: colors.gray100,
     },
     messageHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         marginBottom: 5,
     },
     senderName: {
         fontSize: 14,
-        fontWeight: 'bold',
-        color: '#000',
+        fontWeight: "bold",
+        color: colors.black,
     },
     backButton: {
         padding: 10,
@@ -167,7 +169,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 40,
         borderWidth: 1,
-        borderColor: '#eee',
+        borderColor: colors.gray100,
         borderRadius: 10,
         paddingHorizontal: 10,
     },
@@ -176,8 +178,8 @@ const styles = StyleSheet.create({
     },
     sendButtonText: {
         fontSize: 16,
-        color: '#000',
+        color: colors.black,
     },
 });
 
-export default ChatScreen
+export default ChatScreen;

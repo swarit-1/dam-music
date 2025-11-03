@@ -22,7 +22,7 @@
     "expo-status-bar": "~3.0.8",
     "expo-video": "~3.0.12",
     "expo-video-thumbnails": "~10.0.7",
-    "firebase": "^12.4.0",
+    "firebase": "^12.5.0",
     "minimatch": "^10.0.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
