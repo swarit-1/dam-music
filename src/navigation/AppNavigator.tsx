@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
@@ -68,19 +68,21 @@ const AppNavigator = () => {
     const { user, loading } = useAuth();
     const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
     const [checkingProfile, setCheckingProfile] = useState(false);
-    const [justSignedUp, setJustSignedUp] = useState(false);
+    const hasCheckedProfile = useRef(false);
 
     useEffect(() => {
         if (!user) {
             setProfileComplete(null);
-            setJustSignedUp(false);
+            hasCheckedProfile.current = false;
             return;
         }
         
-        // If user just appeared (likely just signed up), mark as incomplete and delay check
-        if (!justSignedUp) {
-            setJustSignedUp(true);
-            setProfileComplete(false); // Assume incomplete for new signups
+        // Only check profile once per user, unless we need to re-check
+        if (!hasCheckedProfile.current) {
+            hasCheckedProfile.current = true;
+            // For new signups, assume incomplete initially to allow navigation
+            setProfileComplete(false);
+            
             // Delay the actual check to allow navigation to complete
             const timer = setTimeout(async () => {
                 setCheckingProfile(true);
@@ -97,40 +99,39 @@ const AppNavigator = () => {
                 } finally {
                     setCheckingProfile(false);
                 }
-            }, 500); // Longer delay to ensure navigation completes
+            }, 800); // Longer delay to ensure navigation.reset completes
 
             return () => clearTimeout(timer);
-        } else {
-            // User already existed, check immediately
-            const checkProfile = async () => {
-                setCheckingProfile(true);
-                try {
-                    const profile = await getUserProfile(user.uid);
-                    const isComplete = profile && (profile.genre?.length > 0 || profile.role?.length > 0);
-                    setProfileComplete(isComplete);
-                } catch (error) {
-                    console.error('Error checking profile:', error);
-                    setProfileComplete(false);
-                } finally {
-                    setCheckingProfile(false);
-                }
-            };
-            checkProfile();
         }
-    }, [user, justSignedUp]);
+    }, [user]);
 
-    if (loading || checkingProfile) {
+    // Only show loading if auth is loading, not when checking profile
+    // This prevents remounting AuthNavigator during profile checks
+    if (loading) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#9333ea" />
             </View>
         );
     }
-    const shouldShowAuth = !user || !profileComplete;
+    
+    // Determine which navigator to show
+    // If user exists but profile is incomplete (or null), show AuthNavigator
+    // If user exists and profile is complete, show MainTabs
+    // If no user, show AuthNavigator
+    const shouldShowAuth = !user || (profileComplete === null || !profileComplete);
+
+    // Use a stable key based on user ID to preserve navigation state
+    // This prevents remounting when profileComplete changes
+    const navigatorKey = user ? `auth-${user.uid}` : 'auth-no-user';
 
     return (
         <NavigationContainer>
-            {shouldShowAuth ? <AuthNavigator /> : <MainTabs />}
+            {shouldShowAuth ? (
+                <AuthNavigator key={navigatorKey} />
+            ) : (
+                <MainTabs />
+            )}
         </NavigationContainer>
     );
 };
