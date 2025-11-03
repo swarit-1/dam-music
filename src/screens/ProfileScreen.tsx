@@ -180,6 +180,104 @@ export default function ProfileScreen() {
         );
     };
 
+    // Avatar actions: pick from library, take photo, delete
+    const handlePickAvatarFromLibrary = async () => {
+        const { status } =
+            await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+            Alert.alert(
+                "Permission required",
+                "We need access to your photos to select a profile picture."
+            );
+            return;
+        }
+
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+            if (result.canceled) return;
+            const asset = result.assets[0];
+            setProfile((prev) => ({ ...prev, avatarUrl: asset.uri }));
+        } catch (e) {
+            console.warn("Avatar pick failed", e);
+            Alert.alert("Error", "Could not pick an image");
+        }
+    };
+
+    const handleTakePhoto = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+            Alert.alert(
+                "Permission required",
+                "We need access to your camera to take a profile picture."
+            );
+            return;
+        }
+
+        try {
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+            if (result.canceled) return;
+            const asset = result.assets[0];
+            setProfile((prev) => ({ ...prev, avatarUrl: asset.uri }));
+        } catch (e) {
+            console.warn("Camera capture failed", e);
+            Alert.alert("Error", "Could not take a photo");
+        }
+    };
+
+    const handleDeleteAvatar = () => {
+        if (!profile.avatarUrl) return;
+        Alert.alert(
+            "Delete photo",
+            "Are you sure you want to delete your profile photo?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () =>
+                        setProfile((prev) => ({
+                            ...prev,
+                            avatarUrl: undefined,
+                        })),
+                },
+            ]
+        );
+    };
+
+    const handleEditAvatar = () => {
+        const options: Array<{
+            text: string;
+            onPress?: () => any;
+            style?: any;
+        }> = [
+            {
+                text: "Upload new profile picture",
+                onPress: handlePickAvatarFromLibrary,
+            },
+            { text: "Take new profile picture", onPress: handleTakePhoto },
+        ];
+        if (profile.avatarUrl) {
+            options.push({
+                text: "Delete profile picture",
+                style: "destructive",
+                onPress: handleDeleteAvatar,
+            });
+        }
+        options.push({ text: "Cancel", style: "cancel" });
+
+        Alert.alert("Edit profile picture", "Choose an option", options as any);
+    };
+
     // place the top action buttons below the OS status bar / safe area
 
     return (
@@ -266,12 +364,7 @@ export default function ProfileScreen() {
                                 )}
                                 <TouchableOpacity
                                     style={styles.avatarEditButton}
-                                    onPress={() =>
-                                        Alert.alert(
-                                            "Edit Profile Picture",
-                                            "Profile picture editing coming soon!"
-                                        )
-                                    }
+                                    onPress={handleEditAvatar}
                                     accessibilityLabel="Edit profile picture"
                                 >
                                     <MaterialIcons
