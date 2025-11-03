@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     Image,
 } from "react-native";
+import { colors } from "../theme/colors";
 import { Song } from "../types/profile";
 
 interface SongListProps {
@@ -101,16 +102,16 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "bold",
         marginBottom: 15,
-        color: "#333",
+        color: colors.surfaceMid,
     },
     songItem: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
         padding: 12,
         borderRadius: 8,
         marginBottom: 10,
-        shadowColor: "#000",
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
@@ -126,14 +127,14 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 6,
-        backgroundColor: "#e0e0e0",
+        backgroundColor: colors.gray200,
         justifyContent: "center",
         alignItems: "center",
         marginRight: 12,
     },
     placeholderText: {
         fontSize: 24,
-        color: "#999",
+        color: colors.gray500,
     },
     songInfo: {
         flex: 1,
@@ -142,31 +143,31 @@ const styles = StyleSheet.create({
     songTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#333",
+        color: colors.surfaceMid,
         marginBottom: 4,
     },
     songArtist: {
         fontSize: 14,
-        color: "#666",
+        color: colors.gray500,
     },
     songMeta: {
         alignItems: "flex-end",
     },
     duration: {
         fontSize: 12,
-        color: "#999",
+        color: colors.gray300,
         marginBottom: 8,
     },
     deleteButton: {
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: "#ff3b30",
+        backgroundColor: colors.danger,
         justifyContent: "center",
         alignItems: "center",
     },
     deleteButtonText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 18,
         fontWeight: "bold",
         lineHeight: 20,
@@ -175,19 +176,19 @@ const styles = StyleSheet.create({
         padding: 40,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f9f9f9",
+        backgroundColor: colors.gray100,
         borderRadius: 10,
         marginBottom: 20,
     },
     emptyText: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#666",
+        color: colors.gray500,
         marginBottom: 8,
     },
     emptySubtext: {
         fontSize: 14,
-        color: "#999",
+        color: colors.gray300,
         textAlign: "center",
     },
 });

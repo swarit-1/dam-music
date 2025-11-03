@@ -9,6 +9,7 @@ import {
     TextInput,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { colors } from "../theme/colors";
 import { Connection } from "../types/profile";
 
 // Demo connections
@@ -60,7 +61,11 @@ export const ConnectionsManager: React.FC<ConnectionsManagerProps> = ({
                             : alert(`Message ${item.displayName}`)
                     }
                 >
-                    <MaterialIcons name="message" size={22} color="#007AFF" />
+                    <MaterialIcons
+                        name="message"
+                        size={22}
+                        color={colors.brandPurple}
+                    />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.removeButton}
@@ -70,7 +75,11 @@ export const ConnectionsManager: React.FC<ConnectionsManagerProps> = ({
                             : alert(`Remove ${item.displayName}`)
                     }
                 >
-                    <MaterialIcons name="close" size={22} color="#ff3b30" />
+                    <MaterialIcons
+                        name="close"
+                        size={22}
+                        color={colors.danger}
+                    />
                 </TouchableOpacity>
             </View>
         </View>
@@ -114,22 +123,22 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginTop: 15,
         marginBottom: 15,
-        color: "#333",
+        color: colors.surfaceMid,
     },
     searchInput: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
         padding: 12,
         borderRadius: 8,
         fontSize: 16,
         marginBottom: 15,
         borderWidth: 1,
-        borderColor: "#e0e0e0",
+        borderColor: colors.gray200,
     },
     tabs: {
         flexDirection: "row",
         marginBottom: 15,
         borderBottomWidth: 1,
-        borderBottomColor: "#e0e0e0",
+        borderBottomColor: colors.gray200,
     },
     tab: {
         flex: 1,
@@ -138,25 +147,25 @@ const styles = StyleSheet.create({
     },
     activeTab: {
         borderBottomWidth: 2,
-        borderBottomColor: "#007AFF",
+        borderBottomColor: colors.brandPurple,
     },
     tabText: {
         fontSize: 14,
-        color: "#666",
+        color: colors.gray500,
         fontWeight: "500",
     },
     activeTabText: {
-        color: "#007AFF",
+        color: colors.brandPurple,
         fontWeight: "600",
     },
     connectionItem: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
         padding: 12,
         borderRadius: 8,
         marginBottom: 10,
-        shadowColor: "#000",
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
@@ -172,13 +181,13 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: "#007AFF",
+        backgroundColor: colors.brandPurple,
         justifyContent: "center",
         alignItems: "center",
         marginRight: 12,
     },
     avatarText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 20,
         fontWeight: "600",
     },
@@ -188,12 +197,12 @@ const styles = StyleSheet.create({
     displayName: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#333",
+        color: colors.surfaceMid,
         marginBottom: 4,
     },
     username: {
         fontSize: 14,
-        color: "#666",
+        color: colors.gray500,
     },
     connectionActions: {
         flexDirection: "row",
@@ -211,7 +220,7 @@ const styles = StyleSheet.create({
     },
     mutualBadge: {
         fontSize: 12,
-        color: "#34C759",
+        color: colors.brandPurple,
         fontWeight: "600",
         marginBottom: 8,
     },
@@ -219,12 +228,12 @@ const styles = StyleSheet.create({
         padding: 40,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f9f9f9",
+        backgroundColor: colors.gray100,
         borderRadius: 10,
     },
     emptyText: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#666",
+        color: colors.gray500,
     },
 });

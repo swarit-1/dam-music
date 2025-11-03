@@ -11,35 +11,40 @@ import {
     TouchableOpacity,
     Alert,
     ActivityIndicator,
+    Modal,
 } from "react-native";
 import { SongList } from "../profile/SongList";
 import { ConnectionsManager } from "../profile/ConnectionsManager";
 import { Song, Connection, Profile } from "../types/profile";
 import { MaterialIcons } from "@expo/vector-icons";
+import { colors } from "../theme/colors";
 import * as ImagePicker from "expo-image-picker";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
 import { VideoGrid } from "../profile/VideoGrid";
 import { signOut } from "../services/authService";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useAuth } from "../contexts/AuthContext";
+import { Video, ResizeMode } from "expo-av";
+import * as VideoThumbnails from "expo-video-thumbnails";
 
 export default function ProfileScreen() {
     const { user } = useAuth();
     const { profile, loading, error } = useUserProfile();
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);
+    const [selectedVideo, setSelectedVideo] = useState<{ uri: string } | null>(null);
     const [videos, setVideos] = useState<{ uri: string; thumbnail?: string }[]>(
         [
             {
                 uri: "https://www.w3schools.com/html/mov_bbb.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+1",
+                thumbnail: "https://picsum.photos/300/533?random=1",
             },
             {
                 uri: "https://www.w3schools.com/html/movie.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+2",
+                thumbnail: "https://picsum.photos/300/533?random=2",
             },
             {
                 uri: "https://www.w3schools.com/html/mov_bbb.mp4",
-                thumbnail: "https://placehold.co/300x533?text=Video+3",
+                thumbnail: "https://picsum.photos/300/533?random=3",
             },
         ]
     );
@@ -110,7 +115,20 @@ export default function ProfileScreen() {
         });
         if (result.canceled) return;
         const asset = result.assets[0];
-        setVideos((prev) => [...prev, { uri: asset.uri }]);
+
+        try {
+            // Generate thumbnail from video
+            const thumbnail = await VideoThumbnails.getThumbnailAsync(asset.uri, {
+                time: 1000, // Get thumbnail at 1 second
+                quality: 0.5,
+            });
+
+            setVideos((prev) => [...prev, { uri: asset.uri, thumbnail: thumbnail.uri }]);
+        } catch (error) {
+            console.error("Error generating thumbnail:", error);
+            // Fallback: add video without thumbnail
+            setVideos((prev) => [...prev, { uri: asset.uri }]);
+        }
     };
 
     const handleDeleteSong = (songId: string) => {
@@ -189,43 +207,50 @@ export default function ProfileScreen() {
                         accessibilityLabel="Upload video"
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <MaterialIcons name="add" size={28} color="#111" />
+                        <MaterialIcons
+                            name="add"
+                            size={28}
+                            color={colors.surfaceMid}
+                        />
                     </TouchableOpacity>
 
                     {/* Settings (tune) on the right */}
                     <TouchableOpacity
                         style={[styles.settingsButton]}
                         onPress={() =>
-                            Alert.alert(
-                                "Settings",
-                                "Choose an option",
-                                [
-                                    {
-                                        text: "Edit Profile",
-                                        onPress: () => console.log("Edit profile")
+                            Alert.alert("Settings", "Choose an option", [
+                                {
+                                    text: "Edit Profile",
+                                    onPress: () => console.log("Edit profile"),
+                                },
+                                {
+                                    text: "Logout",
+                                    onPress: async () => {
+                                        try {
+                                            await signOut();
+                                        } catch (error) {
+                                            Alert.alert(
+                                                "Error",
+                                                "Failed to logout"
+                                            );
+                                        }
                                     },
-                                    {
-                                        text: "Logout",
-                                        onPress: async () => {
-                                            try {
-                                                await signOut();
-                                            } catch (error) {
-                                                Alert.alert("Error", "Failed to logout");
-                                            }
-                                        },
-                                        style: "destructive"
-                                    },
-                                    {
-                                        text: "Cancel",
-                                        style: "cancel"
-                                    }
-                                ]
-                            )
+                                    style: "destructive",
+                                },
+                                {
+                                    text: "Cancel",
+                                    style: "cancel",
+                                },
+                            ])
                         }
                         accessibilityLabel="Edit profile settings"
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <MaterialIcons name="tune" size={26} color="#111" />
+                        <MaterialIcons
+                            name="tune"
+                            size={26}
+                            color={colors.surfaceMid}
+                        />
                     </TouchableOpacity>
 
                     <ScrollView>
@@ -248,18 +273,13 @@ export default function ProfileScreen() {
                                 )}
                                 <TouchableOpacity
                                     style={styles.avatarEditButton}
-                                    onPress={() =>
-                                        Alert.alert(
-                                            "Edit Profile Picture",
-                                            "Profile picture editing coming soon!"
-                                        )
-                                    }
+                                    onPress={handleEditAvatar}
                                     accessibilityLabel="Edit profile picture"
                                 >
                                     <MaterialIcons
                                         name="edit"
                                         size={16}
-                                        color="#fff"
+                                        color={colors.white}
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -311,6 +331,7 @@ export default function ProfileScreen() {
                         <VideoGrid
                             videos={videos}
                             onAddVideo={handleAddVideo}
+                            onVideoPress={(index) => setSelectedVideo(videos[index])}
                         />
                         {/* Song List: only show if no videos */}
                         {videos.length === 0 && (
@@ -321,6 +342,27 @@ export default function ProfileScreen() {
                             />
                         )}
                     </ScrollView>
+
+                    {/* Video Modal */}
+                    {selectedVideo && (
+                        <Modal visible={true} animationType="slide">
+                            <View style={styles.videoContainer}>
+                                <TouchableOpacity
+                                    onPress={() => setSelectedVideo(null)}
+                                    style={styles.closeButton}
+                                >
+                                    <MaterialIcons name="close" size={30} color="#fff" />
+                                </TouchableOpacity>
+                                <Video
+                                    source={{ uri: selectedVideo.uri }}
+                                    style={styles.videoPlayer}
+                                    useNativeControls
+                                    resizeMode={ResizeMode.CONTAIN}
+                                    shouldPlay
+                                />
+                            </View>
+                        </Modal>
+                    )}
                 </>
             )}
         </SafeAreaView>
@@ -330,7 +372,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
     },
     uploadButton: {
         position: "absolute",
@@ -342,8 +384,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 20,
-        backgroundColor: "#fff",
-        shadowColor: "#000",
+        backgroundColor: colors.white,
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 1,
@@ -376,14 +418,14 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: "#007AFF",
+        backgroundColor: colors.brandPurple,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 15,
         alignSelf: "center",
     },
     avatarText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 40,
         fontWeight: "600",
     },
@@ -394,17 +436,17 @@ const styles = StyleSheet.create({
     displayName: {
         fontSize: 24,
         fontWeight: "bold",
-        color: "#333",
+        color: colors.surfaceMid,
         marginBottom: 4,
     },
     username: {
         fontSize: 16,
-        color: "#666",
+        color: colors.gray500,
         marginBottom: 8,
     },
     bio: {
         fontSize: 14,
-        color: "#666",
+        color: colors.gray500,
         textAlign: "center",
         marginTop: 8,
         paddingHorizontal: 20,
@@ -420,20 +462,20 @@ const styles = StyleSheet.create({
     },
     editProfileButton: {
         flex: 1,
-        backgroundColor: "#007AFF",
+        backgroundColor: colors.brandPurple,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 8,
         alignItems: "center",
     },
     editProfileText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 14,
         fontWeight: "600",
     },
     connectionsButton: {
         flex: 1,
-        backgroundColor: "#f0f0f0",
+        backgroundColor: colors.gray100,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 8,
@@ -442,7 +484,7 @@ const styles = StyleSheet.create({
     connectionsNumber: {
         fontSize: 14,
         fontWeight: "bold",
-        color: "#444",
+        color: colors.surfaceMid,
     },
     stats: {
         flexDirection: "row",
@@ -456,22 +498,22 @@ const styles = StyleSheet.create({
     statNumber: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#333",
+        color: colors.surfaceMid,
     },
     statLabel: {
         fontSize: 14,
-        color: "#666",
+        color: colors.gray500,
         marginTop: 4,
     },
     editButton: {
-        backgroundColor: "#007AFF",
+        backgroundColor: colors.brandPurple,
         paddingVertical: 10,
         paddingHorizontal: 30,
         borderRadius: 20,
         alignSelf: "center",
     },
     editButtonText: {
-        color: "#fff",
+        color: colors.white,
         fontSize: 14,
         fontWeight: "600",
     },
@@ -486,15 +528,15 @@ const styles = StyleSheet.create({
         position: "absolute",
         right: 0,
         bottom: 0,
-        backgroundColor: "#ccc",
+        backgroundColor: colors.gray300,
         borderRadius: 14,
         width: 28,
         height: 28,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 2,
-        borderColor: "#fff",
-        shadowColor: "#000",
+        borderColor: colors.white,
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.15,
         shadowRadius: 2,

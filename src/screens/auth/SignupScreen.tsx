@@ -79,10 +79,10 @@ export default function SignupScreen({ navigation }: any) {
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
+        if (password !== confirmPassword) {
+            Alert.alert("Error", "Passwords do not match");
+            return;
+        }
 
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters');

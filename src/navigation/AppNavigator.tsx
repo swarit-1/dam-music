@@ -2,13 +2,16 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
-import ChatListScreen from "../screens/messaging/ChatListScreen";
+import MessagingNavigator from "./MessagingNavigator";
 import ProfileScreen from "../screens/ProfileScreen";
+import ManagementScreen from "../screens/ManagementScreen";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from "../contexts/AuthContext";
 import { getUserProfile } from '../services/authService';
-import AuthNavigator from './AuthNavigator';
+import AuthNavigator from "./AuthNavigator";
+import { colors } from "../theme/colors";
+import ChatListScreen from "../screens/messaging/ChatListScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -21,46 +24,67 @@ const MainTabs = () => {
                 tabBarShowLabel: false,
             }}
         >
-                <Tab.Screen
-                    name="Feed"
-                    component={FeedScreen}
-                    options={{
-                        tabBarIcon: ({ focused, color, size }) => (
-                            <MaterialIcons
-                                name="home"
-                                size={24}
-                                color={focused ? "#007AFF" : "#8e8e93"}
-                            />
-                        ),
-                    }}
-                />
-                <Tab.Screen
-                    name="Messages"
-                    component={ChatListScreen}
-                    options={{
-                        tabBarIcon: ({ focused }) => (
-                            <MaterialIcons
-                                name="chat-bubble"
-                                size={24}
-                                color={focused ? "#007AFF" : "#8e8e93"}
-                            />
-                        ),
-                    }}
-                />
-                <Tab.Screen
-                    name="Profile"
-                    component={ProfileScreen}
-                    options={{
-                        tabBarIcon: ({ focused }) => (
-                            <MaterialIcons
-                                name="person"
-                                size={24}
-                                color={focused ? "#007AFF" : "#8e8e93"}
-                            />
-                        ),
-                    }}
-                />
-            </Tab.Navigator>
+            <Tab.Screen
+                name="Feed"
+                component={FeedScreen}
+                options={{
+                    tabBarIcon: ({ focused, color, size }) => (
+                        <MaterialIcons
+                            name="home"
+                            size={24}
+                            color={
+                                focused ? colors.white : colors.gray300
+                            }
+                        />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Messages"
+                component={ChatListScreen}
+                options={{
+                    tabBarIcon: ({ focused }) => (
+                        <MaterialIcons
+                            name="chat-bubble"
+                            size={24}
+                            color={
+                                focused ? colors.white : colors.gray300
+                            }
+                        />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Management"
+                component={ManagementScreen}
+                options={{
+                    tabBarIcon: ({ focused }) => (
+                        <MaterialIcons
+                            name="workspaces-outline"
+                            size={24}
+                            color={
+                                focused ? colors.white : colors.gray300
+                            }
+                        />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={ProfileScreen}
+                options={{
+                    tabBarIcon: ({ focused }) => (
+                        <MaterialIcons
+                            name="person"
+                            size={24}
+                            color={
+                                focused ? colors.white : colors.gray300
+                            }
+                        />
+                    ),
+                }}
+            />
+        </Tab.Navigator>
     );
 };
 
@@ -110,7 +134,7 @@ const AppNavigator = () => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#9333ea" />
+                <ActivityIndicator size="large" color={colors.brandPurple} />
             </View>
         );
     }
@@ -153,14 +177,12 @@ const ProfilePlaceholderScreen = () => (
 const styles = StyleSheet.create({
     loadingContainer: {
         flex: 1,
-        backgroundColor: '#0a0a0a',
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: colors.black,
+        justifyContent: "center",
+        alignItems: "center",
     },
     tabBar: {
-        borderTopWidth: 1,
-        borderTopColor: "#eee",
-        backgroundColor: "#fff",
+        backgroundColor: colors.brandPurple600,
         paddingTop: 5,
         paddingBottom: 10,
         height: 50,
@@ -169,14 +191,14 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: "#e0e0e0",
+        backgroundColor: colors.gray200,
     },
     tabIconActive: {
-        backgroundColor: "#c0c0c0",
+        backgroundColor: colors.gray300,
     },
     placeholder: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: colors.white,
         justifyContent: "center",
         alignItems: "center",
     },

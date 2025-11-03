@@ -27,7 +27,8 @@
     },
     "plugins": [
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-video"
     ],
     "scheme": "dammusic"
   }
