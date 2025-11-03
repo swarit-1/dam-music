@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { signUp } from '../../services/authService';
 import { useGoogleAuth, handleGoogleSignIn } from '../../services/googleAuthService';
 
@@ -80,144 +81,14 @@ export default function SignupScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView
+    <LinearGradient
+      colors={['rgba(80, 42, 120, 1)', 'rgba(157, 89, 226, 1)']}
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <MaterialIcons name="music-note" size={40} color="#fff" />
-            </View>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join the music community</Text>
-          </View>
-
-          {/* Form */}
-          <View style={styles.form}>
-            {/* Name Input */}
-            <View style={styles.inputContainer}>
-              <MaterialIcons name="person" size={20} color="#888" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Full Name"
-                placeholderTextColor="#666"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                editable={!loading}
-              />
-            </View>
-
-            {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <MaterialIcons name="email" size={20} color="#888" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#666"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                editable={!loading}
-              />
-            </View>
-
-            {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <MaterialIcons name="lock" size={20} color="#888" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#666"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                editable={!loading}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <MaterialIcons
-                  name={showPassword ? 'visibility' : 'visibility-off'}
-                  size={20}
-                  color="#888"
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Confirm Password Input */}
-            <View style={styles.inputContainer}>
-              <MaterialIcons name="lock" size={20} color="#888" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm Password"
-                placeholderTextColor="#666"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                editable={!loading}
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeIcon}
-              >
-                <MaterialIcons
-                  name={showConfirmPassword ? 'visibility' : 'visibility-off'}
-                  size={20}
-                  color="#888"
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Signup Button */}
-            <TouchableOpacity
-              style={[styles.signupButton, loading && styles.signupButtonDisabled]}
-              onPress={handleSignup}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#000" />
-              ) : (
-                <Text style={styles.signupButtonText}>Create Account</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Sign Up */}
-            <TouchableOpacity 
-              style={styles.googleButton} 
-              onPress={handleGoogleSignInPress}
-              disabled={loading || !request}
-            >
-              <MaterialIcons name="mail" size={20} color="#fff" />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
-            </TouchableOpacity>
-
-            {/* Login Link */}
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.loginLink}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      {/* Logo */}
+    </LinearGradient>
   );
 }
 

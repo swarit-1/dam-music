@@ -5,21 +5,22 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { signIn } from '../../services/authService';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useGoogleAuth, handleGoogleSignIn } from '../../services/googleAuthService';
+import { signIn } from '../../services/authService';
+import Logo from '../../../assets/image.png';
+import UsernameIcon from '../../../assets/username.svg';
+import LockIcon from '../../../assets/lock.svg';
 
 export default function LoginScreen({ navigation }: any) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   // Google Sign-In
   const { request, response, promptAsync } = useGoogleAuth();
 
@@ -33,7 +34,7 @@ export default function LoginScreen({ navigation }: any) {
     try {
       setLoading(true);
       await handleGoogleSignIn(response);
-      // Navigation handled by AuthContext
+      // Navigation will be handled by AuthContext
     } catch (error: any) {
       Alert.alert('Google Sign-In Failed', error.message);
     } finally {
@@ -42,14 +43,15 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!username || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setLoading(true);
     try {
-      await signIn(email, password);
+      // Assuming username is email for now
+      await signIn(username, password);
       // Navigation will be handled by AuthContext
     } catch (error: any) {
       Alert.alert('Login Failed', error.message);
@@ -58,260 +60,231 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    if (loading) return; // Prevent multiple calls
-    
+  const handleCreateAccount = () => {
+    navigation.navigate('Signup');
+  };
+
+  const handleGoogleSignInPress = async () => {
     try {
-      setLoading(true);
       await promptAsync();
     } catch (error: any) {
       Alert.alert('Error', error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
+    <LinearGradient
+      colors={['rgba(80, 42, 120, 1)', 'rgba(157, 89, 226, 1)']}
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <MaterialIcons name="music-note" size={40} color="#fff" />
-          </View>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to connect with musicians</Text>
-        </View>
-
-        {/* Form */}
-        <View style={styles.form}>
-          {/* Email Input */}
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="email" size={20} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#666"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              editable={!loading}
-            />
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="lock" size={20} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#666"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              editable={!loading}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <MaterialIcons
-                name={showPassword ? 'visibility' : 'visibility-off'}
-                size={20}
-                color="#888"
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-          </TouchableOpacity>
-
-          {/* Login Button */}
-          <TouchableOpacity
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Google Sign In */}
-          <TouchableOpacity 
-            style={[styles.googleButton, loading && styles.googleButtonDisabled]} 
-            onPress={handleGoogleSignIn}
-            disabled={loading || !request}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <MaterialIcons name="mail" size={20} color="#fff" />
-            )}
-            <Text style={styles.googleButtonText}>
-              {loading ? 'Signing in...' : 'Continue with Google'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Sign Up Link */}
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.signupLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      {/* Logo */}
+      <View style={styles.logoContainer}>
+        <Image source={Logo} style={styles.logoImage} resizeMode="contain" />
       </View>
-    </KeyboardAvoidingView>
+
+      {/* Username Input */}
+      <View style={styles.inputWrapper}>
+        <UsernameIcon width={21} height={25} style={styles.inputIcon} />
+        {!username && <Text style={styles.label}>Username</Text>}
+        <TextInput
+          style={styles.input}
+          value={username}
+          onChangeText={setUsername}
+          placeholderTextColor="#ffffff"
+          autoCapitalize="none"
+        />
+        <View style={styles.underline} />
+      </View>
+
+      {/* Password Input */}
+      <View style={styles.passwordWrapper}>
+        <View style={styles.iconContainer}>
+          <LockIcon width={21} height={27} />
+        </View>
+        {!password && <Text style={styles.label}>Password</Text>}
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholderTextColor="#ffffff"
+          secureTextEntry
+          autoCapitalize="none"
+        />
+        <View style={styles.underline} />
+      </View>
+
+      {/* Log In Button */}
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={handleLogin}
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        {loading ? (
+          <ActivityIndicator color="#502A78" />
+        ) : (
+          <Text style={styles.loginButtonText}>Log In</Text>
+        )}
+      </TouchableOpacity>
+
+      {/* Create Account Button */}
+      <TouchableOpacity
+        style={styles.createAccountButton}
+        onPress={handleCreateAccount}
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.createAccountButtonText}>Create Account</Text>
+      </TouchableOpacity>
+
+      {/* Log In With Google Button */}
+      <TouchableOpacity
+        style={styles.googleButton}
+        onPress={handleGoogleSignInPress}
+        disabled={loading || !request}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.googleButtonText}>Log In With Google</Text>
+      </TouchableOpacity>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-  },
-  header: {
+    width: '100%',
+    position: 'relative',
     alignItems: 'center',
-    marginBottom: 40,
+    paddingHorizontal: 20,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(147, 51, 234, 0.2)',
+    position: 'relative',
+    top: '25%',
+    width: '80%',
+    maxWidth: 300,
+    height: 116,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(147, 51, 234, 0.3)',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#888',
-  },
-  form: {
+  logoImage: {
     width: '100%',
+    maxWidth: 364,
+    height: 116,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 16,
-    height: 56,
+  inputWrapper: {
+    position: 'absolute',
+    top: '47%',
+    width: '80%',
+    maxWidth: 300,
+    height: 31,
+    overflow: 'visible',
+  },
+  passwordWrapper: {
+    position: 'absolute',
+    top: '55%',
+    width: '80%',
+    maxWidth: 300,
+    height: 31,
+    overflow: 'visible',
+  },
+  iconContainer: {
+    position: 'absolute',
+    left: 0,
+    top: 3,
+    width: 21,
+    height: 27,
   },
   inputIcon: {
-    marginRight: 12,
+    position: 'absolute',
+    left: 0,
+    top: 3,
+  },
+  label: {
+    position: 'absolute',
+    left: 89,
+    top: 0,
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '400',
+    letterSpacing: 0,
   },
   input: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 16,
+    position: 'absolute',
+    left: 89,
+    top: 0,
+    right: 0,
+    height: 30,
+    backgroundColor: 'transparent',
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '400',
+    letterSpacing: 0,
+    padding: 0,
   },
-  eyeIcon: {
-    padding: 8,
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    color: '#9333ea',
-    fontSize: 14,
+  underline: {
+    position: 'absolute',
+    left: 0,
+    top: 30,
+    width: '100%',
+    height: 1,
+    backgroundColor: '#ffffff',
   },
   loginButton: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    height: 56,
-    alignItems: 'center',
+    position: 'absolute',
+    top: '64%',
+    width: '80%',
+    maxWidth: 300,
+    height: 52,
+    backgroundColor: '#ffffff',
+    borderRadius: 7,
     justifyContent: 'center',
-    marginBottom: 20,
-  },
-  loginButtonDisabled: {
-    opacity: 0.6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   loginButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#000000',
+    fontFamily: 'Itim-Regular',
+    fontSize: 20,
+    fontWeight: '400',
+    letterSpacing: 0,
   },
-  divider: {
-    flexDirection: 'row',
+  createAccountButton: {
+    position: 'absolute',
+    top: '74%',
+    width: '80%',
+    maxWidth: 300,
+    height: 52,
+    backgroundColor: '#ffffff',
+    borderRadius: 7,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  dividerText: {
-    color: '#666',
-    paddingHorizontal: 16,
-    fontSize: 14,
+  createAccountButtonText: {
+    color: '#000000',
+    fontFamily: 'Itim-Regular',
+    fontSize: 20,
+    fontWeight: '400',
+    letterSpacing: 0,
   },
   googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: 'absolute',
+    top: '84%',
+    width: '80%',
+    maxWidth: 300,
+    height: 52,
+    backgroundColor: '#ffffff',
+    borderRadius: 7,
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    height: 56,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: 24,
-  },
-  googleButtonDisabled: {
-    opacity: 0.6,
+    alignItems: 'center',
   },
   googleButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 12,
-  },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  signupText: {
-    color: '#888',
-    fontSize: 14,
-  },
-  signupLink: {
-    color: '#9333ea',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#000000',
+    fontFamily: 'Itim-Regular',
+    fontSize: 20,
+    fontWeight: '400',
+    letterSpacing: 0,
   },
 });

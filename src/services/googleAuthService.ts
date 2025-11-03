@@ -13,8 +13,10 @@ WebBrowser.maybeCompleteAuthSession();
 export const useGoogleAuth = () => {
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: GOOGLE_WEB_CLIENT_ID,
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID, 
     androidClientId: GOOGLE_WEB_CLIENT_ID,
+    // Explicitly set redirectUri to force webClientId format
+    redirectUri: 'https://auth.expo.io/@anonymous/dam-music',
   });
 
   return { request, response, promptAsync };

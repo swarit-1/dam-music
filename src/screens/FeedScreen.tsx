@@ -9,18 +9,22 @@ import {
     ActivityIndicator,
 } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
-import { ScoredPost } from "../types";
+import { ScoredPost, User } from "../types";
 import { getFeedForUser } from "../services/matchingService";
-import { mockUser, mockPosts } from "../data/mockData";
+import { mockPosts } from "../data/mockData";
 import { audioService } from "../services/audioService";
+import { useAuth } from "../contexts/AuthContext";
+import { getUserProfile } from "../services/authService";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function FeedScreen() {
+    const { user } = useAuth();
     const [posts, setPosts] = useState<ScoredPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
+    const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
     const flatListRef = useRef<FlatList>(null);
     const isFocused = useIsFocused();
 
@@ -29,7 +33,7 @@ export default function FeedScreen() {
         return () => {
             audioService.cleanup();
         };
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         // Play audio for current post
@@ -61,12 +65,63 @@ export default function FeedScreen() {
 
     const initializeScreen = async () => {
         try {
+            setLoading(true);
             // Initialize audio service
             await audioService.initialize();
 
-            // Fetch and rank posts
-            const rankedPosts = getFeedForUser(mockUser, mockPosts);
-            setPosts(rankedPosts);
+            // Fetch user profile from Firestore if available
+            let userProfile: User | null = null;
+            if (user) {
+                try {
+                    const firestoreProfile = await getUserProfile(user.uid);
+                    if (firestoreProfile) {
+                        // Map Firestore profile to User type for matching service
+                        userProfile = {
+                            id: user.uid,
+                            name: firestoreProfile.displayName || user.displayName || "User",
+                            role: firestoreProfile.role || [],
+                            skills: [], // TODO: Add skills field to Firestore profile if needed
+                            genres: firestoreProfile.genre || [],
+                            location: "", // TODO: Add location to Firestore profile if needed
+                            avatar: firestoreProfile.profileImage || user.photoURL || undefined,
+                        };
+                    } else {
+                        // Fallback to Firebase Auth data
+                        userProfile = {
+                            id: user.uid,
+                            name: user.displayName || "User",
+                            role: [],
+                            skills: [],
+                            genres: [],
+                            location: "",
+                            avatar: user.photoURL || undefined,
+                        };
+                    }
+                } catch (err) {
+                    console.error("Error fetching user profile:", err);
+                    // Fallback to Firebase Auth data
+                    userProfile = {
+                        id: user.uid,
+                        name: user.displayName || "User",
+                        role: [],
+                        skills: [],
+                        genres: [],
+                        location: "",
+                        avatar: user.photoURL || undefined,
+                    };
+                }
+            }
+
+            setFirebaseUser(userProfile);
+
+            // Fetch and rank posts using Firebase user data
+            if (userProfile) {
+                const rankedPosts = getFeedForUser(userProfile, mockPosts);
+                setPosts(rankedPosts);
+            } else {
+                // If no user, just show posts without ranking
+                setPosts(mockPosts as ScoredPost[]);
+            }
             setLoading(false);
         } catch (error) {
             console.error("Error initializing feed:", error);
