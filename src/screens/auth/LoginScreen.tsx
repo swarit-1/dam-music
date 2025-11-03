@@ -10,6 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useGoogleAuth, handleGoogleSignIn } from '../../services/googleAuthService';
 import { signIn } from '../../services/authService';
 import Logo from '../../../assets/image.png';
@@ -19,6 +20,7 @@ import LockIcon from '../../../assets/lock.svg';
 export default function LoginScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Google Sign-In
@@ -94,6 +96,7 @@ export default function LoginScreen({ navigation }: any) {
           onChangeText={setUsername}
           placeholderTextColor="#ffffff"
           autoCapitalize="none"
+          autoCorrect={false}
         />
         <View style={styles.underline} />
       </View>
@@ -109,9 +112,20 @@ export default function LoginScreen({ navigation }: any) {
           value={password}
           onChangeText={setPassword}
           placeholderTextColor="#ffffff"
-          secureTextEntry
+          secureTextEntry={!showPassword}
           autoCapitalize="none"
+          autoCorrect={false}
         />
+        <TouchableOpacity
+          style={styles.eyeIcon}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          <MaterialIcons 
+            name={showPassword ? "visibility" : "visibility-off"} 
+            size={24} 
+            color="#ffffff" 
+          />
+        </TouchableOpacity>
         <View style={styles.underline} />
       </View>
 
@@ -200,6 +214,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 3,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 10,
+    top: 3,
+    padding: 4,
   },
   label: {
     position: 'absolute',

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
@@ -7,6 +7,7 @@ import ProfileScreen from "../screens/ProfileScreen";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from '../contexts/AuthContext';
+import { getUserProfile } from '../services/authService';
 import AuthNavigator from './AuthNavigator';
 
 const Tab = createBottomTabNavigator();
@@ -65,18 +66,71 @@ const MainTabs = () => {
 
 const AppNavigator = () => {
     const { user, loading } = useAuth();
+    const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+    const [checkingProfile, setCheckingProfile] = useState(false);
+    const [justSignedUp, setJustSignedUp] = useState(false);
 
-    if (loading) {
+    useEffect(() => {
+        if (!user) {
+            setProfileComplete(null);
+            setJustSignedUp(false);
+            return;
+        }
+        
+        // If user just appeared (likely just signed up), mark as incomplete and delay check
+        if (!justSignedUp) {
+            setJustSignedUp(true);
+            setProfileComplete(false); // Assume incomplete for new signups
+            // Delay the actual check to allow navigation to complete
+            const timer = setTimeout(async () => {
+                setCheckingProfile(true);
+                try {
+                    const profile = await getUserProfile(user.uid);
+                    // Profile is complete if it has genres or roles
+                    const isComplete = profile && (profile.genre?.length > 0 || profile.role?.length > 0);
+                    console.log('Profile check:', { hasProfile: !!profile, genres: profile?.genre?.length, roles: profile?.role?.length, isComplete });
+                    setProfileComplete(isComplete);
+                } catch (error) {
+                    console.error('Error checking profile:', error);
+                    // If profile doesn't exist or error, assume incomplete
+                    setProfileComplete(false);
+                } finally {
+                    setCheckingProfile(false);
+                }
+            }, 500); // Longer delay to ensure navigation completes
+
+            return () => clearTimeout(timer);
+        } else {
+            // User already existed, check immediately
+            const checkProfile = async () => {
+                setCheckingProfile(true);
+                try {
+                    const profile = await getUserProfile(user.uid);
+                    const isComplete = profile && (profile.genre?.length > 0 || profile.role?.length > 0);
+                    setProfileComplete(isComplete);
+                } catch (error) {
+                    console.error('Error checking profile:', error);
+                    setProfileComplete(false);
+                } finally {
+                    setCheckingProfile(false);
+                }
+            };
+            checkProfile();
+        }
+    }, [user, justSignedUp]);
+
+    if (loading || checkingProfile) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#9333ea" />
             </View>
         );
     }
+    const shouldShowAuth = !user || !profileComplete;
 
     return (
         <NavigationContainer>
-            {user ? <MainTabs /> : <AuthNavigator />}
+            {shouldShowAuth ? <AuthNavigator /> : <MainTabs />}
         </NavigationContainer>
     );
 };
