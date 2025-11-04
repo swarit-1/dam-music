@@ -10,6 +10,7 @@ import {
     Image,
     TouchableOpacity,
     Alert,
+    ActivityIndicator,
     Modal,
 } from "react-native";
 import { SongList } from "../profile/SongList";
@@ -21,10 +22,14 @@ import * as ImagePicker from "expo-image-picker";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
 import { VideoGrid } from "../profile/VideoGrid";
 import { signOut } from "../services/authService";
+import { useUserProfile } from "../hooks/useUserProfile";
+import { useAuth } from "../contexts/AuthContext";
 import { Video, ResizeMode } from "expo-av";
 import * as VideoThumbnails from "expo-video-thumbnails";
 
 export default function ProfileScreen() {
+    const { user } = useAuth();
+    const { profile, loading, error } = useUserProfile();
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);
     const [selectedVideo, setSelectedVideo] = useState<{ uri: string } | null>(null);
     const [videos, setVideos] = useState<{ uri: string; thumbnail?: string }[]>(
@@ -43,43 +48,21 @@ export default function ProfileScreen() {
             },
         ]
     );
-    // Mock data - replace with actual data from your backend/state management
-    const [profile, setProfile] = useState<Profile>({
-        id: "1",
-        username: "musiclover",
-        displayName: "Music Loverrr",
-        bio: "Passionate about creating and sharing music 🎵",
-        avatarUrl: undefined,
+    // Profile data is now fetched from Firebase via useUserProfile hook
+    // Default profile for when data is loading
+    const defaultProfile: Profile = {
+        id: user?.uid || "",
+        username: user?.email?.split('@')[0] || "user",
+        displayName: user?.displayName || "User",
+        bio: "",
+        avatarUrl: user?.photoURL || undefined,
         songs: [],
-        connections: [
-            {
-                id: "1",
-                username: "beatmaker",
-                displayName: "Beat Maker",
-                avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
-                connectionType: "mutual",
-                connectedAt: new Date(),
-            },
-            {
-                id: "2",
-                username: "vocalqueen",
-                displayName: "Vocal Queen",
-                avatarUrl: "https://randomuser.me/api/portraits/women/44.jpg",
-                connectionType: "mutual",
-                connectedAt: new Date(),
-            },
-            {
-                id: "3",
-                username: "drumguy",
-                displayName: "Drum Guy",
-                avatarUrl: "https://randomuser.me/api/portraits/men/65.jpg",
-                connectionType: "mutual",
-                connectedAt: new Date(),
-            },
-        ],
+        connections: [],
         followersCount: 0,
         followingCount: 0,
-    });
+    };
+
+    const displayProfile = profile || defaultProfile;
 
     const handlePickVideo = async () => {
         // Request media library permission if needed
@@ -157,13 +140,9 @@ export default function ProfileScreen() {
                 {
                     text: "Delete",
                     style: "destructive",
-                    onPress: () => {
-                        setProfile((prev) => ({
-                            ...prev,
-                            songs: prev.songs.filter(
-                                (song) => song.id !== songId
-                            ),
-                        }));
+                    onPress: async () => {
+                        // TODO: Implement delete from Firestore
+                        Alert.alert("Success", "Song deleted (not yet implemented in Firestore)");
                     },
                 },
             ]
@@ -184,124 +163,37 @@ export default function ProfileScreen() {
                 {
                     text: "Remove",
                     style: "destructive",
-                    onPress: () => {
-                        setProfile((prev) => ({
-                            ...prev,
-                            connections: prev.connections.filter(
-                                (conn) => conn.id !== connectionId
-                            ),
-                        }));
+                    onPress: async () => {
+                        // TODO: Implement remove connection from Firestore
+                        Alert.alert("Success", "Connection removed (not yet implemented in Firestore)");
                     },
                 },
             ]
         );
     };
 
-    // Avatar actions: pick from library, take photo, delete
-    const handlePickAvatarFromLibrary = async () => {
-        const { status } =
-            await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== "granted") {
-            Alert.alert(
-                "Permission required",
-                "We need access to your photos to select a profile picture."
-            );
-            return;
-        }
-
-        try {
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 0.8,
-            });
-            if (result.canceled) return;
-            const asset = result.assets[0];
-            setProfile((prev) => ({ ...prev, avatarUrl: asset.uri }));
-        } catch (e) {
-            console.warn("Avatar pick failed", e);
-            Alert.alert("Error", "Could not pick an image");
-        }
-    };
-
-    const handleTakePhoto = async () => {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== "granted") {
-            Alert.alert(
-                "Permission required",
-                "We need access to your camera to take a profile picture."
-            );
-            return;
-        }
-
-        try {
-            const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 0.8,
-            });
-            if (result.canceled) return;
-            const asset = result.assets[0];
-            setProfile((prev) => ({ ...prev, avatarUrl: asset.uri }));
-        } catch (e) {
-            console.warn("Camera capture failed", e);
-            Alert.alert("Error", "Could not take a photo");
-        }
-    };
-
-    const handleDeleteAvatar = () => {
-        if (!profile.avatarUrl) return;
-        Alert.alert(
-            "Delete photo",
-            "Are you sure you want to delete your profile photo?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: () =>
-                        setProfile((prev) => ({
-                            ...prev,
-                            avatarUrl: undefined,
-                        })),
-                },
-            ]
+    // Show loading indicator while fetching profile
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#007AFF" />
+                    <Text style={styles.loadingText}>Loading profile...</Text>
+                </View>
+            </SafeAreaView>
         );
-    };
+    }
 
-    const handleEditAvatar = () => {
-        const options: Array<{
-            text: string;
-            onPress?: () => any;
-            style?: any;
-        }> = [
-            {
-                text: "Upload new profile picture",
-                onPress: handlePickAvatarFromLibrary,
-            },
-            { text: "Take new profile picture", onPress: handleTakePhoto },
-        ];
-        if (profile.avatarUrl) {
-            options.push({
-                text: "Delete profile picture",
-                style: "destructive",
-                onPress: handleDeleteAvatar,
-            });
-        }
-        options.push({ text: "Cancel", style: "cancel" });
-
-        Alert.alert("Edit profile picture", "Choose an option", options as any);
-    };
-
-    // place the top action buttons below the OS status bar / safe area
+    // Show error message if there's an error (but still show profile with fallback data)
+    if (error) {
+        console.warn("Error loading profile:", error);
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             {showConnectionsScreen ? (
                 <ConnectionsScreen
-                    connections={profile.connections}
+                    connections={displayProfile.connections}
                     onRemoveConnection={handleRemoveConnection}
                     onBack={() => setShowConnectionsScreen(false)}
                 />
@@ -365,15 +257,15 @@ export default function ProfileScreen() {
                         {/* Profile Header */}
                         <View style={styles.profileHeader}>
                             <View style={styles.avatarContainer}>
-                                {profile.avatarUrl ? (
+                                {displayProfile.avatarUrl ? (
                                     <Image
-                                        source={{ uri: profile.avatarUrl }}
+                                        source={{ uri: displayProfile.avatarUrl }}
                                         style={styles.avatar}
                                     />
                                 ) : (
                                     <View style={styles.avatarPlaceholder}>
                                         <Text style={styles.avatarText}>
-                                            {profile.displayName
+                                            {displayProfile.displayName
                                                 .charAt(0)
                                                 .toUpperCase()}
                                         </Text>
@@ -394,14 +286,14 @@ export default function ProfileScreen() {
 
                             <View style={styles.profileInfo}>
                                 <Text style={styles.displayName}>
-                                    {profile.displayName}
+                                    {displayProfile.displayName}
                                 </Text>
                                 <Text style={styles.username}>
-                                    @{profile.username}
+                                    @{displayProfile.username}
                                 </Text>
-                                {profile.bio && (
+                                {displayProfile.bio && (
                                     <Text style={styles.bio}>
-                                        {profile.bio}
+                                        {displayProfile.bio}
                                     </Text>
                                 )}
 
@@ -428,7 +320,7 @@ export default function ProfileScreen() {
                                         }
                                     >
                                         <Text style={styles.connectionsNumber}>
-                                            {profile.connections.length}{" "}
+                                            {displayProfile.connections.length}{" "}
                                             Connections
                                         </Text>
                                     </TouchableOpacity>
@@ -444,7 +336,7 @@ export default function ProfileScreen() {
                         {/* Song List: only show if no videos */}
                         {videos.length === 0 && (
                             <SongList
-                                songs={profile.songs}
+                                songs={displayProfile.songs}
                                 onSongPress={handleSongPress}
                                 onDeleteSong={handleDeleteSong}
                             />
@@ -650,23 +542,15 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
-    videoContainer: {
+    loadingContainer: {
         flex: 1,
-        backgroundColor: "#000",
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: "#fff",
     },
-    videoPlayer: {
-        width: "100%",
-        height: "100%",
-    },
-    closeButton: {
-        position: "absolute",
-        top: 50,
-        right: 20,
-        zIndex: 10,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        borderRadius: 20,
-        padding: 10,
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: "#666",
     },
 });
