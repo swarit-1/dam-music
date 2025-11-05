@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
@@ -94,6 +94,25 @@ const AppNavigator = () => {
     const [checkingProfile, setCheckingProfile] = useState(false);
     const hasCheckedProfile = useRef(false);
 
+    const checkProfile = useCallback(async () => {
+        if (!user) return;
+        
+        setCheckingProfile(true);
+        try {
+            const profile = await getUserProfile(user.uid);
+            // Profile is complete if it has genres or roles
+            const isComplete = profile && (profile.genre?.length > 0 || profile.role?.length > 0);
+            console.log('Profile check:', { hasProfile: !!profile, genres: profile?.genre?.length, roles: profile?.role?.length, isComplete });
+            setProfileComplete(isComplete);
+        } catch (error) {
+            console.error('Error checking profile:', error);
+            // If profile doesn't exist or error, assume incomplete
+            setProfileComplete(false);
+        } finally {
+            setCheckingProfile(false);
+        }
+    }, [user]);
+
     useEffect(() => {
         if (!user) {
             setProfileComplete(null);
@@ -101,33 +120,34 @@ const AppNavigator = () => {
             return;
         }
         
-        // Only check profile once per user, unless we need to re-check
+        // Check profile initially
         if (!hasCheckedProfile.current) {
             hasCheckedProfile.current = true;
             // For new signups, assume incomplete initially to allow navigation
             setProfileComplete(false);
             
             // Delay the actual check to allow navigation to complete
-            const timer = setTimeout(async () => {
-                setCheckingProfile(true);
-                try {
-                    const profile = await getUserProfile(user.uid);
-                    // Profile is complete if it has genres or roles
-                    const isComplete = profile && (profile.genre?.length > 0 || profile.role?.length > 0);
-                    console.log('Profile check:', { hasProfile: !!profile, genres: profile?.genre?.length, roles: profile?.role?.length, isComplete });
-                    setProfileComplete(isComplete);
-                } catch (error) {
-                    console.error('Error checking profile:', error);
-                    // If profile doesn't exist or error, assume incomplete
-                    setProfileComplete(false);
-                } finally {
-                    setCheckingProfile(false);
-                }
+            const timer = setTimeout(() => {
+                checkProfile();
             }, 800); // Longer delay to ensure navigation.reset completes
 
             return () => clearTimeout(timer);
         }
     }, [user]);
+
+    // If profile is incomplete, periodically re-check (every 2 seconds)
+    // This allows the app to detect when profile is updated in ProfileGenresScreen
+    useEffect(() => {
+        if (!user || profileComplete !== false) {
+            return;
+        }
+        
+        const intervalId = setInterval(() => {
+            checkProfile();
+        }, 2000);
+
+        return () => clearInterval(intervalId);
+    }, [user, profileComplete, checkProfile]);
 
     // Only show loading if auth is loading, not when checking profile
     // This prevents remounting AuthNavigator during profile checks

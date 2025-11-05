@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Modal,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,6 +15,26 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
   const [selectedSoftware, setSelectedSoftware] = useState('');
   const [selectedSkillLevel, setSelectedSkillLevel] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [showSoftwareModal, setShowSoftwareModal] = useState(false);
+  const [showSkillLevelModal, setShowSkillLevelModal] = useState(false);
+
+  const softwareOptions = [
+    'Ableton Live',
+    'Pro Tools',
+    'Logic Pro',
+    'FL Studio',
+    'Cubase',
+    'Studio One',
+    'Reaper',
+    'GarageBand',
+  ];
+
+  const skillLevelOptions = [
+    'Beginner',
+    'Intermediate',
+    'Advanced',
+    'Professional',
+  ];
 
   const skills = [
     'Mixing',
@@ -37,6 +59,60 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
     // Save profile data and navigate to genres screen
     navigation.navigate('ProfileGenres');
   };
+
+  const renderPickerModal = (
+    visible: boolean,
+    onClose: () => void,
+    title: string,
+    options: string[],
+    selectedValue: string,
+    onSelect: (value: string) => void
+  ) => (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <MaterialIcons name="close" size={24} color="#000000" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalOptions}>
+            {options.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.modalOption,
+                  selectedValue === option && styles.modalOptionSelected,
+                ]}
+                onPress={() => {
+                  onSelect(option);
+                  onClose();
+                }}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    selectedValue === option && styles.modalOptionTextSelected,
+                  ]}
+                >
+                  {option}
+                </Text>
+                {selectedValue === option && (
+                  <MaterialIcons name="check" size={24} color="#ffffff" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const renderDropdown = (
     label: string,
@@ -82,10 +158,7 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
           'Software',
           'Select your preferred software application',
           selectedSoftware,
-          () => {
-            // TODO: Open software picker
-            console.log('Open software picker');
-          }
+          () => setShowSoftwareModal(true)
         )}
 
         {/* Skill Level Section */}
@@ -93,10 +166,7 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
           'Skill Level',
           'Select your level of experience',
           selectedSkillLevel,
-          () => {
-            // TODO: Open skill level picker
-            console.log('Open skill level picker');
-          }
+          () => setShowSkillLevelModal(true)
         )}
 
         {/* Skills Section */}
@@ -132,6 +202,26 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
         <Text style={styles.nextButtonText}>Next</Text>
         <MaterialIcons name="arrow-forward" size={20} color="#ffffff" style={styles.nextButtonIcon} />
       </TouchableOpacity>
+
+      {/* Software Picker Modal */}
+      {renderPickerModal(
+        showSoftwareModal,
+        () => setShowSoftwareModal(false),
+        'Select Software',
+        softwareOptions,
+        selectedSoftware,
+        setSelectedSoftware
+      )}
+
+      {/* Skill Level Picker Modal */}
+      {renderPickerModal(
+        showSkillLevelModal,
+        () => setShowSkillLevelModal(false),
+        'Select Skill Level',
+        skillLevelOptions,
+        selectedSkillLevel,
+        setSelectedSkillLevel
+      )}
     </LinearGradient>
   );
 }
@@ -249,6 +339,55 @@ const styles = StyleSheet.create({
   },
   nextButtonIcon: {
     marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalOptions: {
+    maxHeight: 400,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalOptionSelected: {
+    backgroundColor: 'rgba(80, 42, 120, 0.1)',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#000000',
+  },
+  modalOptionTextSelected: {
+    color: 'rgba(80, 42, 120, 1)',
+    fontWeight: '600',
   },
 });
 

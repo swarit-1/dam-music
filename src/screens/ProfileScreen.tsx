@@ -64,6 +64,10 @@ export default function ProfileScreen() {
 
     const displayProfile = profile || defaultProfile;
 
+    const handleEditAvatar = () => {
+        console.log("Edit avatar");
+    };
+
     const handlePickVideo = async () => {
         // Request media library permission if needed
         const { status } =
@@ -373,6 +377,22 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.white,
+    },
+    videoContainer: {
+        flex: 1,
+        backgroundColor: colors.white,
+    },
+    closeButton: {
+        position: "absolute",
+        top: 20,
+        right: 20,
+        zIndex: 10,
+        width: 40,
+        height: 40,
+    },
+    videoPlayer: {
+        width: "100%",
+        height: "100%",
     },
     uploadButton: {
         position: "absolute",

@@ -5,14 +5,22 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Modal,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useAuth } from '../../contexts/AuthContext';
+import { updateUserProfile } from '../../services/authService';
 
 export default function ProfileGenresScreen({ navigation }: any) {
+  const { user } = useAuth();
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedCollaboration, setSelectedCollaboration] = useState('');
+  const [showCollaborationModal, setShowCollaborationModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const genres = [
     'Pop',
@@ -33,7 +41,14 @@ export default function ProfileGenresScreen({ navigation }: any) {
     'Vocalist',
     'Soloist',
     'Rapper',
-    'Soloist',
+    'Drummer',
+  ];
+
+  const collaborationOptions = [
+    'In-Person',
+    'Online',
+    'Hybrid',
+    'Both',
   ];
 
   const toggleGenre = (genre: string) => {
@@ -52,12 +67,33 @@ export default function ProfileGenresScreen({ navigation }: any) {
     }
   };
 
-  const handleNext = () => {
-    // TODO: Save preferences and navigate to next screen or complete setup
-    console.log('Genres:', selectedGenres);
-    console.log('Roles:', selectedRoles);
-    console.log('Collaboration:', selectedCollaboration);
-    // navigation.navigate('NextScreen');
+  const handleNext = async () => {
+    if (!user) {
+      Alert.alert('Error', 'User not found. Please sign in again.');
+      return;
+    }
+
+    if (selectedGenres.length === 0 || selectedRoles.length === 0) {
+      Alert.alert('Error', 'Please select at least one genre and one role.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Save preferences to Firestore
+      await updateUserProfile(user.uid, {
+        genre: selectedGenres,
+        role: selectedRoles,
+        collaboration: selectedCollaboration || 'Both',
+      });
+
+      // Profile is now complete - AppNavigator will detect this and navigate to MainTabs
+      // Keep loading state to show we're processing
+      // The periodic check in AppNavigator will detect the updated profile within 2 seconds
+    } catch (error: any) {
+      Alert.alert('Error', `Failed to save profile: ${error.message}`);
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -90,6 +126,60 @@ export default function ProfileGenresScreen({ navigation }: any) {
         </TouchableOpacity>
       ))}
     </View>
+  );
+
+  const renderPickerModal = (
+    visible: boolean,
+    onClose: () => void,
+    title: string,
+    options: string[],
+    selectedValue: string,
+    onSelect: (value: string) => void
+  ) => (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <MaterialIcons name="close" size={24} color="#000000" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalOptions}>
+            {options.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.modalOption,
+                  selectedValue === option && styles.modalOptionSelected,
+                ]}
+                onPress={() => {
+                  onSelect(option);
+                  onClose();
+                }}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    selectedValue === option && styles.modalOptionTextSelected,
+                  ]}
+                >
+                  {option}
+                </Text>
+                {selectedValue === option && (
+                  <MaterialIcons name="check" size={24} color="#ffffff" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 
   return (
@@ -136,10 +226,7 @@ export default function ProfileGenresScreen({ navigation }: any) {
           </Text>
           <TouchableOpacity
             style={styles.dropdown}
-            onPress={() => {
-              // TODO: Open collaboration picker
-              console.log('Open collaboration picker');
-            }}
+            onPress={() => setShowCollaborationModal(true)}
           >
             <Text style={[styles.dropdownText, !selectedCollaboration && styles.dropdownPlaceholder]}>
               {selectedCollaboration || 'Select...'}
@@ -151,15 +238,31 @@ export default function ProfileGenresScreen({ navigation }: any) {
 
       {/* Navigation Buttons */}
       <View style={styles.navigationContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack} disabled={loading}>
           <MaterialIcons name="arrow-back" size={20} color="#ffffff" style={styles.navIcon} />
           <Text style={styles.navButtonText}>Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.navButtonText}>Next</Text>
-          <MaterialIcons name="arrow-forward" size={20} color="#ffffff" style={styles.navIcon} />
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          ) : (
+            <>
+              <Text style={styles.navButtonText}>Next</Text>
+              <MaterialIcons name="arrow-forward" size={20} color="#ffffff" style={styles.navIcon} />
+            </>
+          )}
         </TouchableOpacity>
       </View>
+
+      {/* Collaboration Picker Modal */}
+      {renderPickerModal(
+        showCollaborationModal,
+        () => setShowCollaborationModal(false),
+        'Select Collaboration Mode',
+        collaborationOptions,
+        selectedCollaboration,
+        setSelectedCollaboration
+      )}
     </LinearGradient>
   );
 }
@@ -281,6 +384,55 @@ const styles = StyleSheet.create({
   },
   navIcon: {
     marginHorizontal: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalOptions: {
+    maxHeight: 400,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalOptionSelected: {
+    backgroundColor: 'rgba(80, 42, 120, 0.1)',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#000000',
+  },
+  modalOptionTextSelected: {
+    color: 'rgba(80, 42, 120, 1)',
+    fontWeight: '600',
   },
 });
 

@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MessagingStackParamList } from '../../navigation/MessagingNavigator';
 import { colors } from '../../theme/colors';
+import { LinearGradient } from 'expo-linear-gradient';
 
 //replace with actual chat data later
 const chats = [
@@ -112,7 +113,12 @@ const ChatListScreen = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <LinearGradient 
+            colors={['rgba(81, 43, 121, 1)', 'rgba(149, 79, 223, 1)']}
+            style={styles.container}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+        >
             {/*Header for message page */}
             <View style={styles.header}>
                 <View style={styles.headerLeftPlaceholder} />
@@ -180,7 +186,7 @@ const ChatListScreen = () => {
                     )}
                 </TouchableOpacity>
             </Modal>
-        </SafeAreaView>
+        </LinearGradient>
     );
 };
 
