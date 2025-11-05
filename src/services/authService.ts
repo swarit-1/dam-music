@@ -6,7 +6,7 @@ import {
   User,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 /**
@@ -94,6 +94,19 @@ export const getUserProfile = async (userId: string) => {
     }
   } catch (error: any) {
     console.error('Get user profile error:', error);
+    throw new Error(error.message);
+  }
+};
+
+/**
+ * Update user profile in Firestore
+ */
+export const updateUserProfile = async (userId: string, profileData: any) => {
+  try {
+    const docRef = doc(db, 'users', userId);
+    await updateDoc(docRef, profileData);
+  } catch (error: any) {
+    console.error('Update user profile error:', error);
     throw new Error(error.message);
   }
 };
