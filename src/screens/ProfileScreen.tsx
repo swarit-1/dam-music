@@ -26,10 +26,12 @@ import { useUserProfile } from "../hooks/useUserProfile";
 import { useAuth } from "../contexts/AuthContext";
 import { Video, ResizeMode } from "expo-av";
 import * as VideoThumbnails from "expo-video-thumbnails";
+import { BlurView } from "expo-blur";
+import { uploadProfileImage } from "../services/profileImageService";
 
 export default function ProfileScreen() {
     const { user } = useAuth();
-    const { profile, loading, error } = useUserProfile();
+    const { profile, loading, error, refresh } = useUserProfile();
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);
     const [selectedVideo, setSelectedVideo] = useState<{ uri: string } | null>(null);
     const [videos, setVideos] = useState<{ uri: string; thumbnail?: string }[]>(
@@ -63,9 +65,55 @@ export default function ProfileScreen() {
     };
 
     const displayProfile = profile || defaultProfile;
+    const [ showProfileImageUpload, setShowProfileImageUpload ] = useState(false);
+    const [selectedProfileImage, setSelectedProfileImage] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
-    const handleEditAvatar = () => {
-        console.log("Edit avatar");
+    const handlePickProfileImage = async () => {
+        // Request media library permission if needed
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+            Alert.alert(
+                "Permission required",
+                "We need access to your media library to upload a profile picture."
+            );
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+        });
+
+        if (result.canceled) return;
+
+        const asset = result.assets[0];
+        setSelectedProfileImage(asset.uri);
+    };
+
+    const handleSaveProfileImage = async () => {
+        if (!selectedProfileImage || !user) return;
+        
+        try {
+            setUploadingImage(true);
+            
+            // Upload image to Firebase Storage and update Firestore
+            await uploadProfileImage(user.uid, selectedProfileImage);
+            
+            // Refresh profile to show new image
+            await refresh();
+            
+            Alert.alert("Success", "Profile picture updated successfully!");
+            setShowProfileImageUpload(false);
+            setSelectedProfileImage(null);
+        } catch (error: any) {
+            console.error("Error uploading profile image:", error);
+            Alert.alert("Error", error.message || "Failed to upload profile picture");
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
     const handlePickVideo = async () => {
@@ -277,7 +325,7 @@ export default function ProfileScreen() {
                                 )}
                                 <TouchableOpacity
                                     style={styles.avatarEditButton}
-                                    onPress={handleEditAvatar}
+                                    onPress={() => setShowProfileImageUpload(true)}
                                     accessibilityLabel="Edit profile picture"
                                 >
                                     <MaterialIcons
@@ -367,6 +415,95 @@ export default function ProfileScreen() {
                             </View>
                         </Modal>
                     )}
+
+                    {/* Profile Picture Upload Modal */}
+                    <Modal
+                        visible={showProfileImageUpload}
+                        animationType="fade"
+                        transparent={true}
+                        onRequestClose={() => setShowProfileImageUpload(false)}
+                    >
+                        <BlurView intensity={80} style={styles.blurContainer}>
+                            <View style={styles.modalContent}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>Upload Profile Picture</Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setShowProfileImageUpload(false);
+                                            setSelectedProfileImage(null);
+                                        }}
+                                        style={styles.modalCloseButton}
+                                    >
+                                        <MaterialIcons name="close" size={24} color={colors.surfaceMid} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <View style={styles.imagePreviewContainer}>
+                                    {selectedProfileImage ? (
+                                        <Image
+                                            source={{ uri: selectedProfileImage }}
+                                            style={styles.imagePreview}
+                                        />
+                                    ) : (
+                                        <View style={styles.imagePlaceholder}>
+                                            <MaterialIcons
+                                                name="add-a-photo"
+                                                size={64}
+                                                color={colors.gray300}
+                                            />
+                                            <Text style={styles.placeholderText}>
+                                                No image selected
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+
+                                <View style={styles.modalActions}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.selectImageButton,
+                                            uploadingImage && styles.buttonDisabled,
+                                        ]}
+                                        onPress={handlePickProfileImage}
+                                        disabled={uploadingImage}
+                                    >
+                                        <MaterialIcons
+                                            name="photo-library"
+                                            size={24}
+                                            color={colors.white}
+                                        />
+                                        <Text style={styles.selectImageButtonText}>
+                                            {selectedProfileImage ? "Change Image" : "Select Image"}
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    {selectedProfileImage && (
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.saveImageButton,
+                                                uploadingImage && styles.buttonDisabled,
+                                            ]}
+                                            onPress={handleSaveProfileImage}
+                                            disabled={uploadingImage}
+                                        >
+                                            {uploadingImage ? (
+                                                <ActivityIndicator size="small" color={colors.white} />
+                                            ) : (
+                                                <MaterialIcons
+                                                    name="check"
+                                                    size={24}
+                                                    color={colors.white}
+                                                />
+                                            )}
+                                            <Text style={styles.saveImageButtonText}>
+                                                {uploadingImage ? "Uploading..." : "Save"}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </View>
+                        </BlurView>
+                    </Modal>
                 </>
             )}
         </SafeAreaView>
@@ -572,5 +709,100 @@ const styles = StyleSheet.create({
         marginTop: 12,
         fontSize: 16,
         color: "#666",
+    },
+    blurContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: colors.white,
+        borderRadius: 20,
+        padding: 24,
+        width: "90%",
+        maxWidth: 400,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    modalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 24,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: colors.surfaceMid,
+    },
+    modalCloseButton: {
+        width: 32,
+        height: 32,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    imagePreviewContainer: {
+        width: "100%",
+        aspectRatio: 1,
+        marginBottom: 24,
+        borderRadius: 16,
+        overflow: "hidden",
+        backgroundColor: colors.gray100,
+    },
+    imagePreview: {
+        width: "100%",
+        height: "100%",
+    },
+    imagePlaceholder: {
+        width: "100%",
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: colors.gray100,
+    },
+    placeholderText: {
+        marginTop: 12,
+        fontSize: 14,
+        color: colors.gray400,
+    },
+    modalActions: {
+        gap: 12,
+    },
+    selectImageButton: {
+        backgroundColor: colors.brandPurple,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+    },
+    selectImageButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: "600",
+    },
+    saveImageButton: {
+        backgroundColor: "#34C759",
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+    },
+    saveImageButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: "600",
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
 });

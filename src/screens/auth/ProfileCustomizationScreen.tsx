@@ -43,8 +43,8 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
     'Drummer',
     'Guitarist',
     'Violinist',
-    'Mixing',
     'Pianist',
+    'Producer',
   ];
 
   const toggleSkill = (skill: string) => {
@@ -83,9 +83,9 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
           <ScrollView style={styles.modalOptions}>
-            {options.map((option, index) => (
+            {options.map((option) => (
               <TouchableOpacity
-                key={index}
+                key={option}
                 style={[
                   styles.modalOption,
                   selectedValue === option && styles.modalOptionSelected,
@@ -174,9 +174,9 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>Skills</Text>
           <Text style={styles.sectionSubtitle}>Select all that apply</Text>
           <View style={styles.skillsGrid}>
-            {skills.map((skill, index) => (
+            {skills.map((skill) => (
               <TouchableOpacity
-                key={index}
+                key={skill}
                 style={[
                   styles.skillButton,
                   selectedSkills.includes(skill) && styles.skillButtonSelected,

@@ -47,7 +47,6 @@ export default function ProfileGenresScreen({ navigation }: any) {
   const collaborationOptions = [
     'In-Person',
     'Online',
-    'Hybrid',
     'Both',
   ];
 
@@ -78,6 +77,9 @@ export default function ProfileGenresScreen({ navigation }: any) {
       return;
     }
 
+    // Prevent multiple submissions
+    if (loading) return;
+
     setLoading(true);
     try {
       // Save preferences to Firestore
@@ -88,9 +90,23 @@ export default function ProfileGenresScreen({ navigation }: any) {
       });
 
       // Profile is now complete - AppNavigator will detect this and navigate to MainTabs
-      // Keep loading state to show we're processing
-      // The periodic check in AppNavigator will detect the updated profile within 2 seconds
+      // Show success message and reset loading after a short delay
+      Alert.alert('Success', 'Profile created successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Reset loading to allow retry if needed
+            setLoading(false);
+          }
+        }
+      ]);
+
+      // Also reset after 3 seconds in case user doesn't click OK
+      setTimeout(() => {
+        setLoading(false);
+      }, 3000);
     } catch (error: any) {
+      console.error('Profile save error:', error);
       Alert.alert('Error', `Failed to save profile: ${error.message}`);
       setLoading(false);
     }
@@ -106,9 +122,9 @@ export default function ProfileGenresScreen({ navigation }: any) {
     onToggle: (item: string) => void
   ) => (
     <View style={styles.buttonGrid}>
-      {items.map((item, index) => (
+      {items.map((item) => (
         <TouchableOpacity
-          key={index}
+          key={item}
           style={[
             styles.gridButton,
             selectedItems.includes(item) && styles.gridButtonSelected,
@@ -151,9 +167,9 @@ export default function ProfileGenresScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
           <ScrollView style={styles.modalOptions}>
-            {options.map((option, index) => (
+            {options.map((option) => (
               <TouchableOpacity
-                key={index}
+                key={option}
                 style={[
                   styles.modalOption,
                   selectedValue === option && styles.modalOptionSelected,
@@ -238,17 +254,27 @@ export default function ProfileGenresScreen({ navigation }: any) {
 
       {/* Navigation Buttons */}
       <View style={styles.navigationContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack} disabled={loading}>
+        <TouchableOpacity 
+          style={[styles.backButton, loading && styles.buttonDisabled]} 
+          onPress={handleBack} 
+          disabled={loading}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <MaterialIcons name="arrow-back" size={20} color="#ffffff" style={styles.navIcon} />
           <Text style={styles.navButtonText}>Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext} disabled={loading}>
+        <TouchableOpacity 
+          style={[styles.nextButton, loading && styles.buttonDisabled]} 
+          onPress={handleNext} 
+          disabled={loading}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           {loading ? (
             <ActivityIndicator color="#ffffff" size="small" />
           ) : (
             <>
-              <Text style={styles.navButtonText}>Next</Text>
-              <MaterialIcons name="arrow-forward" size={20} color="#ffffff" style={styles.navIcon} />
+              <Text style={styles.navButtonText}>Finish</Text>
+              <MaterialIcons name="check" size={20} color="#ffffff" style={styles.navIcon} />
             </>
           )}
         </TouchableOpacity>
@@ -384,6 +410,9 @@ const styles = StyleSheet.create({
   },
   navIcon: {
     marginHorizontal: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   modalOverlay: {
     flex: 1,
