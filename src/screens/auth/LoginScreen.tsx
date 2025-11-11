@@ -8,6 +8,9 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -81,87 +84,99 @@ export default function LoginScreen({ navigation }: any) {
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
     >
-      {/* Logo */}
-      <View style={styles.logoContainer}>
-        <Image source={Logo} style={styles.logoImage} resizeMode="contain" />
-      </View>
-
-      {/* Username Input */}
-      <View style={styles.inputWrapper}>
-        <UsernameIcon width={21} height={25} style={styles.inputIcon} />
-        {!username && <Text style={styles.label}>Username</Text>}
-        <TextInput
-          style={styles.input}
-          value={username}
-          onChangeText={setUsername}
-          placeholderTextColor="#ffffff"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <View style={styles.underline} />
-      </View>
-
-      {/* Password Input */}
-      <View style={styles.passwordWrapper}>
-        <View style={styles.iconContainer}>
-          <LockIcon width={21} height={27} />
-        </View>
-        {!password && <Text style={styles.label}>Password</Text>}
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholderTextColor="#ffffff"
-          secureTextEntry={!showPassword}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={styles.eyeIcon}
-          onPress={() => setShowPassword(!showPassword)}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <MaterialIcons 
-            name={showPassword ? "visibility" : "visibility-off"} 
-            size={24} 
-            color="#ffffff" 
-          />
-        </TouchableOpacity>
-        <View style={styles.underline} />
-      </View>
+          {/* Logo */}
+          <View style={styles.logoContainer}>
+            <Image source={Logo} style={styles.logoImage} resizeMode="contain" />
+          </View>
 
-      {/* Log In Button */}
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={handleLogin}
-        disabled={loading}
-        activeOpacity={0.8}
-      >
-        {loading ? (
-          <ActivityIndicator color="#502A78" />
-        ) : (
-          <Text style={styles.loginButtonText}>Log In</Text>
-        )}
-      </TouchableOpacity>
+          {/* Username Input */}
+          <View style={styles.inputWrapper}>
+            <UsernameIcon width={21} height={25} style={styles.inputIcon} />
+            {!username && <Text style={styles.label}>Email</Text>}
+            <TextInput
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+              placeholderTextColor="#ffffff"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+            <View style={styles.underline} />
+          </View>
 
-      {/* Create Account Button */}
-      <TouchableOpacity
-        style={styles.createAccountButton}
-        onPress={handleCreateAccount}
-        disabled={loading}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.createAccountButtonText}>Create Account</Text>
-      </TouchableOpacity>
+          {/* Password Input */}
+          <View style={styles.passwordWrapper}>
+            <View style={styles.iconContainer}>
+              <LockIcon width={21} height={27} />
+            </View>
+            {!password && <Text style={styles.label}>Password</Text>}
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholderTextColor="#ffffff"
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <MaterialIcons 
+                name={showPassword ? "visibility" : "visibility-off"} 
+                size={24} 
+                color="#ffffff" 
+              />
+            </TouchableOpacity>
+            <View style={styles.underline} />
+          </View>
 
-      {/* Log In With Google Button */}
-      <TouchableOpacity
-        style={styles.googleButton}
-        onPress={handleGoogleSignInPress}
-        disabled={loading || !request}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.googleButtonText}>Log In With Google</Text>
-      </TouchableOpacity>
+          {/* Log In Button */}
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#502A78" />
+            ) : (
+              <Text style={styles.loginButtonText}>Log In</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Create Account Button */}
+          <TouchableOpacity
+            style={styles.createAccountButton}
+            onPress={handleCreateAccount}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.createAccountButtonText}>Create Account</Text>
+          </TouchableOpacity>
+
+          {/* Log In With Google Button */}
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={handleGoogleSignInPress}
+            disabled={loading || !request}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.googleButtonText}>Log In With Google</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
@@ -170,17 +185,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    position: 'relative',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingTop: 80,
+    paddingBottom: 40,
+    justifyContent: 'center',
+    minHeight: '100%',
   },
   logoContainer: {
-    position: 'relative',
-    top: '25%',
     width: '80%',
     maxWidth: 300,
     height: 116,
     alignItems: 'center',
+    marginBottom: 60,
   },
   logoImage: {
     width: '100%',
@@ -188,19 +211,17 @@ const styles = StyleSheet.create({
     height: 116,
   },
   inputWrapper: {
-    position: 'absolute',
-    top: '47%',
     width: '80%',
     maxWidth: 300,
     height: 31,
+    marginBottom: 30,
     overflow: 'visible',
   },
   passwordWrapper: {
-    position: 'absolute',
-    top: '55%',
     width: '80%',
     maxWidth: 300,
     height: 31,
+    marginBottom: 40,
     overflow: 'visible',
   },
   iconContainer: {
@@ -252,8 +273,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   loginButton: {
-    position: 'absolute',
-    top: '64%',
     width: '80%',
     maxWidth: 300,
     height: 52,
@@ -263,6 +282,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'transparent',
+    marginBottom: 15,
   },
   loginButtonText: {
     color: '#000000',
@@ -272,8 +292,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   createAccountButton: {
-    position: 'absolute',
-    top: '74%',
     width: '80%',
     maxWidth: 300,
     height: 52,
@@ -281,6 +299,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 15,
   },
   createAccountButtonText: {
     color: '#000000',
@@ -290,8 +309,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   googleButton: {
-    position: 'absolute',
-    top: '84%',
     width: '80%',
     maxWidth: 300,
     height: 52,
@@ -299,6 +316,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20,
   },
   googleButtonText: {
     color: '#000000',
