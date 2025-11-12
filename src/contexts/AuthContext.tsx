@@ -6,12 +6,14 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   bypassAuth: () => void;
+  isDevUser: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   bypassAuth: () => {},
+  isDevUser: false,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -19,6 +21,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDevUser, setIsDevUser] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
@@ -52,11 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } as User;
 
     setUser(mockUser);
+    setIsDevUser(true);
     setLoading(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, bypassAuth }}>
+    <AuthContext.Provider value={{ user, loading, bypassAuth, isDevUser }}>
       {children}
     </AuthContext.Provider>
   );

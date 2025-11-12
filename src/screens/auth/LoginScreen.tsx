@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useGoogleAuth, handleGoogleSignIn } from '../../services/googleAuthService';
 import { signIn } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 import Logo from '../../../assets/image.png';
 import UsernameIcon from '../../../assets/username.svg';
 import LockIcon from '../../../assets/lock.svg';
@@ -25,6 +26,9 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Auth context
+  const { bypassAuth } = useAuth();
 
   // Google Sign-In
   const { request, response, promptAsync } = useGoogleAuth();
@@ -75,6 +79,10 @@ export default function LoginScreen({ navigation }: any) {
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }
+  };
+
+  const handleDevSkipLogin = () => {
+    bypassAuth();
   };
 
   return (
@@ -175,6 +183,18 @@ export default function LoginScreen({ navigation }: any) {
           >
             <Text style={styles.googleButtonText}>Log In With Google</Text>
           </TouchableOpacity>
+
+          {/* Dev Skip Login Button - Only visible in development */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.devSkipButton}
+              onPress={handleDevSkipLogin}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.devSkipButtonText}>🚀 Dev Skip Login</Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -322,6 +342,25 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontFamily: 'Itim-Regular',
     fontSize: 20,
+    fontWeight: '400',
+    letterSpacing: 0,
+  },
+  devSkipButton: {
+    width: '60%',
+    maxWidth: 240,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  devSkipButtonText: {
+    color: '#ffffff',
+    fontFamily: 'Itim-Regular',
+    fontSize: 16,
     fontWeight: '400',
     letterSpacing: 0,
   },
