@@ -89,7 +89,7 @@ const MainTabs = () => {
 };
 
 const AppNavigator = () => {
-    const { user, loading } = useAuth();
+    const { user, loading, isDevUser } = useAuth();
     const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
     const [checkingProfile, setCheckingProfile] = useState(false);
     const hasCheckedProfile = useRef(false);
@@ -163,7 +163,8 @@ const AppNavigator = () => {
     // If user exists but profile is incomplete (or null), show AuthNavigator
     // If user exists and profile is complete, show MainTabs
     // If no user, show AuthNavigator
-    const shouldShowAuth = !user || (profileComplete === null || !profileComplete);
+    // For dev users, always show MainTabs
+    const shouldShowAuth = !user || (!isDevUser && (profileComplete === null || !profileComplete));
 
     // Use a stable key based on user ID to preserve navigation state
     // This prevents remounting when profileComplete changes
