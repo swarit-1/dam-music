@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,13 +17,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../../theme/colors';
 import { Conversation, ConversationType } from '../../types/messaging';
 import { MessagingStackParamList } from '../../navigation/MessagingNavigator';
-import { AuthContext } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { subscribeToUserConversations, searchConversations } from '../../services/conversationService';
 import { subscribeToUserPresence } from '../../services/presenceService';
 
 const EnhancedChatListScreen = () => {
   const navigation = useNavigation<StackNavigationProp<MessagingStackParamList>>();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
@@ -32,10 +32,17 @@ const EnhancedChatListScreen = () => {
   const [onlineStatus, setOnlineStatus] = useState<{ [userId: string]: boolean }>({});
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log('Skipping Firestore setup - no user');
+      setIsLoading(false);
+      return;
+    }
 
-    // Subscribe to user's conversations
-    const unsubscribe = subscribeToUserConversations(user.uid, (convs) => {
+    console.log('Setting up conversations subscription for user:', user.uid);
+
+    try {
+      // Subscribe to user's conversations
+      const unsubscribe = subscribeToUserConversations(user.uid, (convs) => {
       setConversations(convs);
       setFilteredConversations(convs);
       setIsLoading(false);
@@ -54,10 +61,17 @@ const EnhancedChatListScreen = () => {
             });
           }
         });
+        });
       });
-    });
 
-    return unsubscribe;
+      return () => {
+        console.log('Cleaning up conversations subscription');
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error('Error setting up conversations subscription:', error);
+      setIsLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {

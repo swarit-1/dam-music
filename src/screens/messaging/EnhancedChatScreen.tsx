@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -71,38 +71,56 @@ const EnhancedChatScreen = () => {
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (!user || !conversationId) return;
-
-    // Subscribe to messages
-    const unsubscribe = subscribeToMessages(conversationId, (newMessages) => {
-      setMessages(newMessages.reverse()); // Reverse for FlatList inverted
-      
-      // Mark messages as read
-      newMessages.forEach(msg => {
-        if (msg.senderId !== user.uid && !msg.readBy?.[user.uid]) {
-          markMessageAsRead(msg.id, user.uid);
-        }
-      });
-    });
-
-    // Subscribe to typing indicators
-    const unsubscribeTyping = subscribeToTypingIndicators(
-      conversationId,
-      user.uid,
-      setTypingUsers
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.brandPurple} />
+          <Text style={styles.loadingText}>Please log in</Text>
+        </View>
+      </SafeAreaView>
     );
+  }
 
-    // Mark conversation as read
-    markConversationAsRead(conversationId, user.uid);
+  useEffect(() => {
+    if (!user || !conversationId) {
+      console.log('Skipping Firestore setup - missing user or conversationId');
+      return;
+    }
 
-    return () => {
-      unsubscribe();
-      unsubscribeTyping();
-      if (user) {
-        stopTyping(conversationId, user.uid);
-      }
-    };
+    console.log('Setting up message subscription for:', conversationId);
+
+    try {
+
+      const unsubscribe = subscribeToMessages(conversationId, (newMessages) => {
+        setMessages(newMessages.reverse());
+        
+        newMessages.forEach(msg => {
+          if (msg.senderId !== user.uid && !msg.readBy?.[user.uid]) {
+            markMessageAsRead(msg.id, user.uid).catch(console.error);
+          }
+        });
+      });
+
+      // Subscribe to typing indicators
+      const unsubscribeTyping = subscribeToTypingIndicators(
+        conversationId,
+        user.uid,
+        setTypingUsers
+      );
+
+      // Mark conversation as read
+      markConversationAsRead(conversationId, user.uid).catch(console.error);
+
+      return () => {
+        console.log('Cleaning up subscriptions');
+        unsubscribe();
+        unsubscribeTyping();
+        stopTyping(conversationId, user.uid).catch(console.error);
+      };
+    } catch (error) {
+      console.error('Error setting up subscriptions:', error);
+    }
   }, [conversationId, user]);
 
   const handleSendMessage = async () => {
@@ -517,6 +535,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: colors.gray500,
   },
   header: {
     flexDirection: 'row',
