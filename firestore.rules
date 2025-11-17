@@ -1,0 +1,118 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isParticipant(participantIds) {
+      return isAuthenticated() && request.auth.uid in participantIds;
+    }
+    
+    function isConversationParticipant(conversationId) {
+      return isAuthenticated() && 
+        request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read user profiles (for displaying in chats)
+      allow read: if isAuthenticated();
+      // Users can only write their own profile
+      allow write: if isOwner(userId);
+    }
+    
+    // Conversations collection
+    match /conversations/{conversationId} {
+      // Only participants can read conversation
+      allow read: if isParticipant(resource.data.participantIds);
+      
+      // Only authenticated users can create conversations
+      // Must include themselves as a participant
+      allow create: if isAuthenticated() && 
+        request.auth.uid in request.resource.data.participantIds &&
+        request.resource.data.createdBy == request.auth.uid;
+      
+      // Only participants can update conversation
+      // Cannot remove themselves from participants unless they're leaving
+      allow update: if isParticipant(resource.data.participantIds) &&
+        (request.auth.uid in request.resource.data.participantIds || 
+         request.resource.data.participantIds.size() < resource.data.participantIds.size());
+      
+      // Only admins can delete (handled by Cloud Functions in production)
+      allow delete: if false;
+    }
+    
+    // Messages collection
+    match /messages/{messageId} {
+      // Only conversation participants can read messages
+      allow read: if isConversationParticipant(resource.data.conversationId);
+      
+      // Only authenticated users can create messages
+      // Must be a participant of the conversation
+      // Must set themselves as sender
+      allow create: if isAuthenticated() &&
+        request.resource.data.senderId == request.auth.uid &&
+        isConversationParticipant(request.resource.data.conversationId);
+      
+      // Senders can update their own messages (for editing)
+      // Participants can update for read receipts and reactions
+      allow update: if isAuthenticated() && (
+        // Sender can edit message content
+        (resource.data.senderId == request.auth.uid) ||
+        // Any participant can add read receipts
+        (isConversationParticipant(resource.data.conversationId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy', 'deliveredTo', 'reactions', 'status']))
+      );
+      
+      // Only sender can delete their messages
+      allow delete: if isOwner(resource.data.senderId);
+    }
+    
+    // User presence collection
+    match /userPresence/{userId} {
+      // Anyone authenticated can read presence
+      allow read: if isAuthenticated();
+      
+      // Users can only update their own presence
+      allow write: if isOwner(userId);
+    }
+    
+    // Typing indicators collection
+    match /typingIndicators/{indicatorId} {
+      // Participants can read typing indicators for their conversations
+      allow read: if isAuthenticated();
+      
+      // Users can only write their own typing indicators
+      allow create, update: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      
+      // Users can delete their own typing indicators
+      allow delete: if isAuthenticated();
+    }
+    
+    // Notification settings
+    match /notificationSettings/{settingId} {
+      // Users can read their own notification settings
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      
+      // Users can write their own notification settings
+      allow write: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Block all other collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
