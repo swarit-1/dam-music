@@ -1,16 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     TouchableOpacity,
     Alert,
     FlatList,
-    LayoutAnimation,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { ManagementStackParamList } from "../navigation/ManagementNavigator";
 import { colors } from "../theme/colors";
+
+type ManagementScreenNavigationProp = StackNavigationProp<
+    ManagementStackParamList,
+    "ManagementHome"
+>;
 
 interface Collaboration {
     id: string;
@@ -20,10 +27,11 @@ interface Collaboration {
     progress: number;
     lastActivity: string;
     genre: string;
+    priorityTask?: string;
 }
 
 const ManagementScreen = () => {
-    const [expanded, setExpanded] = useState<string | null>(null);
+    const navigation = useNavigation<ManagementScreenNavigationProp>();
 
     // Mock data for collaborations
     const collaborations: Collaboration[] = [
@@ -35,6 +43,7 @@ const ManagementScreen = () => {
             progress: 75,
             lastActivity: "2 hours ago",
             genre: "Pop",
+            priorityTask: "Finalize chorus vocal comp",
         },
         {
             id: "2",
@@ -44,6 +53,7 @@ const ManagementScreen = () => {
             progress: 90,
             lastActivity: "1 day ago",
             genre: "R&B",
+            priorityTask: "Address mix notes",
         },
         {
             id: "3",
@@ -53,166 +63,85 @@ const ManagementScreen = () => {
             progress: 45,
             lastActivity: "3 hours ago",
             genre: "Electronic",
-        },
-        {
-            id: "4",
-            title: "Acoustic Journey",
-            partner: "Emma Wilson",
-            status: "completed",
-            progress: 100,
-            lastActivity: "1 week ago",
-            genre: "Folk",
+            priorityTask: "Create bridge synth lead",
         },
     ];
 
-    const filteredCollaborations = collaborations.filter(collab => collab.status !== 'completed');
+    const filteredCollaborations = collaborations.filter(
+        (c) => c.status !== "completed"
+    );
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "active":
-                return "#4CAF50";
-            case "review":
-                return "#FF9800";
-            case "completed":
-                return "#2196F3";
-            default:
-                return colors.gray500;
-        }
-    };
-
-    const getStatusText = (status: string) => {
-        switch (status) {
-            case "active":
-                return "In Progress";
-            case "review":
-                return "Under Review";
-            case "completed":
-                return "Completed";
-            default:
-                return status;
-        }
-    };
-
-
-    const renderCollaboration = ({ item }: { item: Collaboration }) => {
-        const isExpanded = expanded === item.id;
-        return (
-            <View style={styles.collabCard}>
-                <TouchableOpacity
-                    style={styles.dropdownHeader}
-                    onPress={() => {
-                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                        setExpanded(isExpanded ? null : item.id);
-                    }}
-                    activeOpacity={0.8}
-                >
-                    <View style={{ flex: 1 }}>
+    const renderCollaboration = ({ item }: { item: Collaboration }) => (
+        <View style={styles.collabWrapper}>
+            <View style={styles.projectCard}>
+                <View style={styles.collabHeader}>
+                    <View style={styles.collabInfo}>
                         <Text style={styles.collabTitle}>{item.title}</Text>
+                        <View style={styles.metaRow}>
+                            <Text style={styles.collabPartner}>
+                                With {item.partner}
+                            </Text>
+                            <Text style={styles.lastActivity}>
+                                Updated {item.lastActivity}
+                            </Text>
+                        </View>
                     </View>
-                    <MaterialIcons
-                        name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
-                        size={28}
-                        color="#222"
-                    />
-                </TouchableOpacity>
 
-                {isExpanded && (
-                    <View style={styles.dropdownContent}>
-                        <View style={styles.collabDetailsColumn}>
-                            <View style={[styles.infoRow, styles.infoFirst]}>
-                                <Text style={styles.infoLabel}>Last Updated:</Text>
-                                <Text style={styles.infoValue}>10/13/2025</Text>
-                            </View>
-                            <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>Current Stage:</Text>
-                                <Text style={styles.infoValue}>Demo/Recording</Text>
-                            </View>
-                            <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>Collaborators:</Text>
-                                <Text style={styles.infoValue}>{item.partner}</Text>
-                            </View>
-                        </View>
-                        <View style={styles.todoRow}>
-                            <View style={styles.todoCol}>
-                                <Text style={styles.todoLabel}>To Do: Party A</Text>
-                                <View style={styles.todoBox} />
-                                <View style={styles.todoBox} />
-                            </View>
-                            <View style={styles.todoCol}>
-                                <Text style={styles.todoLabel}>To Do: Party B</Text>
-                                <View style={styles.todoBox} />
-                                <View style={styles.todoBox} />
-                            </View>
-                        </View>
-                    </View>
-                )}
+                    <TouchableOpacity
+                        style={styles.entryButton}
+                        onPress={() =>
+                            navigation.navigate("ProjectWorkflow", {
+                                projectId: item.id,
+                                projectName: item.title,
+                                collaborator: item.partner,
+                            })
+                        }
+                        accessibilityLabel={`Open ${item.title}`}
+                    >
+                        <MaterialIcons
+                            name="arrow-forward-ios"
+                            size={18}
+                            color={colors.brandPurple700}
+                        />
+                    </TouchableOpacity>
+                </View>
             </View>
-        );
-    };
+
+            <View style={styles.priorityBox}>
+                <View style={styles.priorityRow}>
+                    <MaterialIcons
+                        name="priority-high"
+                        size={16}
+                        color={colors.brandPurple700}
+                        style={styles.priorityIcon}
+                    />
+                    <Text style={styles.priorityLabel}>Priority</Text>
+                    <Text style={styles.priorityText}>
+                        {item.priorityTask ?? "No priority set"}
+                    </Text>
+                </View>
+            </View>
+        </View>
+    );
 
     return (
-        <View style={styles.container}>
+        <LinearGradient
+            colors={["rgba(81, 43, 121, 1)", "rgba(149, 79, 223, 1)"]}
+            style={styles.container}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+        >
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Work Flow</Text>
-                <Text style={styles.headerSubtitle}>Manage your music projects</Text>
+                <Text style={styles.headerSubtitle}>
+                    Manage your music projects
+                </Text>
             </View>
 
-            {/* Quick Actions */}
-            <View style={styles.quickActions}>
-                <TouchableOpacity
-                    style={styles.quickActionButton}
-                    onPress={() =>
-                        Alert.alert(
-                            "New Collaboration",
-                            "Start a new music collaboration"
-                        )
-                    }
-                >
-                    <MaterialIcons
-                        name="add"
-                        size={24}
-                        color={colors.brandPurple}
-                    />
-                    <Text style={styles.quickActionText}>New Project</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.quickActionButton}
-                    onPress={() =>
-                        Alert.alert(
-                            "Find Collaborators",
-                            "Browse available musicians"
-                        )
-                    }
-                >
-                    <MaterialIcons
-                        name="search"
-                        size={24}
-                        color={colors.brandPurple}
-                    />
-                    <Text style={styles.quickActionText}>Find Partners</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.quickActionButton}
-                    onPress={() =>
-                        Alert.alert("Templates", "Use project templates")
-                    }
-                >
-                    <MaterialIcons
-                        name="description"
-                        size={24}
-                        color={colors.brandPurple}
-                    />
-                    <Text style={styles.quickActionText}>Templates</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Collaborations List */}
             <FlatList
                 data={filteredCollaborations}
                 renderItem={renderCollaboration}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(i) => i.id}
                 contentContainerStyle={styles.collabList}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
@@ -231,64 +160,30 @@ const ManagementScreen = () => {
                     </View>
                 }
             />
-        </View>
+        </LinearGradient>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.gray100,
-    },
+    container: { flex: 1 },
     header: {
-        backgroundColor: colors.white,
+        backgroundColor: "transparent",
         paddingTop: 60,
         paddingHorizontal: 20,
         paddingBottom: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray200,
+        borderBottomWidth: 0,
     },
     headerTitle: {
         fontSize: 28,
         fontWeight: "bold",
-        color: colors.surfaceDark,
+        color: colors.white,
         marginBottom: 4,
-        textAlign: 'center',
+        textAlign: "center",
     },
     headerSubtitle: {
         fontSize: 16,
-        color: '#6c757d',
-        textAlign: 'center',
-    },
-    tabContainer: {
-        flexDirection: "row",
-        backgroundColor: colors.white,
-        marginHorizontal: 20,
-        marginTop: 20,
-        borderRadius: 12,
-        padding: 4,
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    tab: {
-        flex: 1,
-        paddingVertical: 12,
-        alignItems: "center",
-        borderRadius: 8,
-    },
-    activeTab: {
-        backgroundColor: colors.brandPurple,
-    },
-    tabText: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: colors.gray500,
-    },
-    activeTabText: {
-        color: colors.white,
+        color: "rgba(255,255,255,0.9)",
+        textAlign: "center",
     },
     quickActions: {
         flexDirection: "row",
@@ -314,168 +209,76 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         marginTop: 4,
     },
-    collabList: {
-        padding: 20,
-    },
-    collabCard: {
-        backgroundColor: '#f3f3f3',
+    collabList: { padding: 20 },
+    collabWrapper: { marginBottom: 16 },
+    projectCard: {
+        backgroundColor: colors.white,
         borderRadius: 12,
-        marginBottom: 16,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
         shadowColor: colors.black,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        overflow: 'hidden',
-    },
-    dropdownHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 18,
-        backgroundColor: '#fff',
-    },
-    dropdownContent: {
-        backgroundColor: '#f3f3f3',
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-    },
-    infoRow: {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        marginBottom: 12,
-        width: '100%',
-    },
-    infoLabel: {
-        fontWeight: '600',
-        color: '#444',
-        fontSize: 14,
-        marginBottom: 4,
-    },
-    infoValue: {
-        color: '#222',
-        fontSize: 14,
-    },
-    infoFirst: {
-        paddingTop: 8,
-    },
-    todoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 12,
-    },
-    todoCol: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    todoLabel: {
-        fontWeight: '600',
-        color: '#444',
-        fontSize: 13,
-        marginBottom: 6,
-    },
-    todoBox: {
-        width: 70,
-        height: 20,
-        backgroundColor: '#d1d5db',
-        borderRadius: 6,
-        marginBottom: 6,
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
+        elevation: 4,
     },
     collabHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        marginBottom: 12,
+        marginBottom: 0,
     },
-    collabInfo: {
-        flex: 1,
-    },
+    collabInfo: { flex: 1 },
     collabTitle: {
         fontSize: 18,
         fontWeight: "600",
         color: colors.surfaceDark,
-        marginBottom: 4,
+        marginBottom: 8,
     },
-    collabPartner: {
-        fontSize: 14,
-        color: colors.gray500,
-    },
-    statusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    statusText: {
-        color: colors.white,
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    collabDetails: {
+    metaRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 12,
     },
-    genreTag: {
-        backgroundColor: "#f0f8ff",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    genreText: {
-        fontSize: 12,
-        color: colors.brandPurple,
-        fontWeight: "500",
-    },
-    lastActivity: {
-        fontSize: 12,
-        color: colors.gray500,
-    },
-    progressContainer: {
-        flexDirection: "row",
+    collabPartner: { fontSize: 14, color: colors.gray500 },
+    lastActivity: { fontSize: 12, color: colors.gray500 },
+    entryButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: "center",
-        marginBottom: 16,
+        justifyContent: "center",
+        backgroundColor: "rgba(157,89,226,0.08)",
+        marginTop: -2,
     },
-    progressBar: {
-        flex: 1,
-        height: 6,
-        backgroundColor: colors.gray200,
-        borderRadius: 3,
-        marginRight: 12,
-    },
-    progressFill: {
-        height: "100%",
-        backgroundColor: colors.brandPurple,
-        borderRadius: 3,
-    },
-    progressText: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: colors.brandPurple,
-    },
-    collabActions: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-    },
-    actionButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 8,
+    priorityBox: {
+        backgroundColor: "rgba(255,255,255,0.95)",
+        borderRadius: 10,
+        marginTop: 8,
+        paddingVertical: 10,
         paddingHorizontal: 12,
-        borderRadius: 8,
-        backgroundColor: colors.gray100,
+        marginHorizontal: 2,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    actionText: {
-        fontSize: 12,
-        color: colors.brandPurple,
-        fontWeight: "500",
-        marginLeft: 4,
+    priorityLabel: {
+        fontSize: 13,
+        color: colors.gray400,
+        fontWeight: "700",
+        marginRight: 6,
     },
-    emptyState: {
-        alignItems: "center",
-        paddingVertical: 60,
+    priorityRow: { flexDirection: "row", alignItems: "center" },
+    priorityIcon: { marginRight: 4 },
+    priorityText: {
+        fontSize: 13,
+        color: colors.surfaceDark,
+        fontWeight: "600",
+        flex: 1,
     },
+    emptyState: { alignItems: "center", paddingVertical: 60 },
     emptyTitle: {
         fontSize: 18,
         fontWeight: "600",
@@ -488,14 +291,6 @@ const styles = StyleSheet.create({
         color: colors.gray400,
         textAlign: "center",
         paddingHorizontal: 40,
-    },
-    separator: {
-        height: 1,
-        backgroundColor: '#d1d5db',
-        marginVertical: 6,
-    },
-    collabDetailsColumn: {
-        flexDirection: 'column',
     },
 });
 

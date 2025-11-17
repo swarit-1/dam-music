@@ -1,14 +1,20 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+    useState,
+    useEffect,
+    useRef,
+    useMemo,
+    useCallback,
+} from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "../screens/FeedScreen";
 import MessagingNavigator from "./MessagingNavigator";
 import ProfileScreen from "../screens/ProfileScreen";
-import ManagementScreen from "../screens/ManagementScreen";
+import ManagementNavigator from "./ManagementNavigator";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
-import { getUserProfile } from '../services/authService';
+import { getUserProfile } from "../services/authService";
 import AuthNavigator from "./AuthNavigator";
 import { colors } from "../theme/colors";
 import ChatListScreen from "../screens/messaging/ChatListScreen";
@@ -32,9 +38,7 @@ const MainTabs = () => {
                         <MaterialIcons
                             name="home"
                             size={24}
-                            color={
-                                focused ? colors.white : colors.gray300
-                            }
+                            color={focused ? colors.white : colors.gray300}
                         />
                     ),
                 }}
@@ -47,24 +51,20 @@ const MainTabs = () => {
                         <MaterialIcons
                             name="chat-bubble"
                             size={24}
-                            color={
-                                focused ? colors.white : colors.gray300
-                            }
+                            color={focused ? colors.white : colors.gray300}
                         />
                     ),
                 }}
             />
             <Tab.Screen
                 name="Management"
-                component={ManagementScreen}
+                component={ManagementNavigator}
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <MaterialIcons
                             name="workspaces-outline"
                             size={24}
-                            color={
-                                focused ? colors.white : colors.gray300
-                            }
+                            color={focused ? colors.white : colors.gray300}
                         />
                     ),
                 }}
@@ -77,9 +77,7 @@ const MainTabs = () => {
                         <MaterialIcons
                             name="person"
                             size={24}
-                            color={
-                                focused ? colors.white : colors.gray300
-                            }
+                            color={focused ? colors.white : colors.gray300}
                         />
                     ),
                 }}
@@ -90,22 +88,31 @@ const MainTabs = () => {
 
 const AppNavigator = () => {
     const { user, loading, isDevUser } = useAuth();
-    const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+    const [profileComplete, setProfileComplete] = useState<boolean | null>(
+        null
+    );
     const [checkingProfile, setCheckingProfile] = useState(false);
     const hasCheckedProfile = useRef(false);
 
     const checkProfile = useCallback(async () => {
         if (!user) return;
-        
+
         setCheckingProfile(true);
         try {
             const profile = await getUserProfile(user.uid);
             // Profile is complete if it has genres or roles
-            const isComplete = profile && (profile.genre?.length > 0 || profile.role?.length > 0);
-            console.log('Profile check:', { hasProfile: !!profile, genres: profile?.genre?.length, roles: profile?.role?.length, isComplete });
+            const isComplete =
+                profile &&
+                (profile.genre?.length > 0 || profile.role?.length > 0);
+            console.log("Profile check:", {
+                hasProfile: !!profile,
+                genres: profile?.genre?.length,
+                roles: profile?.role?.length,
+                isComplete,
+            });
             setProfileComplete(isComplete);
         } catch (error) {
-            console.error('Error checking profile:', error);
+            console.error("Error checking profile:", error);
             // If profile doesn't exist or error, assume incomplete
             setProfileComplete(false);
         } finally {
@@ -119,13 +126,13 @@ const AppNavigator = () => {
             hasCheckedProfile.current = false;
             return;
         }
-        
+
         // Check profile initially
         if (!hasCheckedProfile.current) {
             hasCheckedProfile.current = true;
             // For new signups, assume incomplete initially to allow navigation
             setProfileComplete(false);
-            
+
             // Delay the actual check to allow navigation to complete
             const timer = setTimeout(() => {
                 checkProfile();
@@ -141,7 +148,7 @@ const AppNavigator = () => {
         if (!user || profileComplete !== false) {
             return;
         }
-        
+
         const intervalId = setInterval(() => {
             checkProfile();
         }, 2000);
@@ -158,17 +165,18 @@ const AppNavigator = () => {
             </View>
         );
     }
-    
+
     // Determine which navigator to show
     // If user exists but profile is incomplete (or null), show AuthNavigator
     // If user exists and profile is complete, show MainTabs
     // If no user, show AuthNavigator
     // For dev users, always show MainTabs
-    const shouldShowAuth = !user || (!isDevUser && (profileComplete === null || !profileComplete));
+    const shouldShowAuth =
+        !user || (!isDevUser && (profileComplete === null || !profileComplete));
 
     // Use a stable key based on user ID to preserve navigation state
     // This prevents remounting when profileComplete changes
-    const navigatorKey = user ? `auth-${user.uid}` : 'auth-no-user';
+    const navigatorKey = user ? `auth-${user.uid}` : "auth-no-user";
 
     return (
         <NavigationContainer>

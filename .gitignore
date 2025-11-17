@@ -44,3 +44,4 @@ yarn-error.*
 GoogleService-Info.plist
 google-services.json
 .env
+node_modules
