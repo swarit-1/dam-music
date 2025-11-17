@@ -86,10 +86,9 @@ const ChatListScreen = () => {
                 setChatsData(prev => prev.map(chat => 
                     chat.id === item.id ? { ...chat, isUnread: false } : chat
                 ));
-                navigation.navigate('Chat', { 
-                    chatId: item.id, 
+                navigation.navigate('EnhancedChat', { 
+                    conversationId: item.id,
                     chatName: item.name,
-                    messages: conversations[item.id as keyof typeof conversations] || []
                 });
             }}
             onLongPress={(event) => {
