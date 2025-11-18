@@ -32,46 +32,53 @@ const EnhancedChatListScreen = () => {
   const [onlineStatus, setOnlineStatus] = useState<{ [userId: string]: boolean }>({});
 
   useEffect(() => {
-    if (!user) {
-      console.log('Skipping Firestore setup - no user');
+    if (!user?.uid) {
+      console.log('Skipping Firestore setup - no authenticated user');
       setIsLoading(false);
       return;
     }
 
-    console.log('Setting up conversations subscription for user:', user.uid);
+    // Add delay to ensure Firebase Auth is fully ready
+    const timeoutId = setTimeout(() => {
+      console.log('Setting up conversations subscription for user:', user.uid);
 
-    try {
-      // Subscribe to user's conversations
-      const unsubscribe = subscribeToUserConversations(user.uid, (convs) => {
-      setConversations(convs);
-      setFilteredConversations(convs);
-      setIsLoading(false);
+      try {
+        // Subscribe to user's conversations
+        const unsubscribe = subscribeToUserConversations(user.uid, (convs) => {
+          setConversations(convs);
+          setFilteredConversations(convs);
+          setIsLoading(false);
 
-      // Subscribe to presence for all participants
-      convs.forEach(conv => {
-        conv.participants.forEach(participant => {
-          if (participant.userId !== user.uid) {
-            subscribeToUserPresence(participant.userId, (presence) => {
-              if (presence) {
-                setOnlineStatus(prev => ({
-                  ...prev,
-                  [participant.userId]: presence.isOnline,
-                }));
+          // Subscribe to presence for all participants
+          convs.forEach(conv => {
+            conv.participants.forEach(participant => {
+              if (participant.userId !== user.uid) {
+                subscribeToUserPresence(participant.userId, (presence) => {
+                  if (presence) {
+                    setOnlineStatus(prev => ({
+                      ...prev,
+                      [participant.userId]: presence.isOnline,
+                    }));
+                  }
+                });
               }
             });
-          }
+          });
         });
-        });
-      });
 
-      return () => {
-        console.log('Cleaning up conversations subscription');
-        unsubscribe();
-      };
-    } catch (error) {
-      console.error('Error setting up conversations subscription:', error);
-      setIsLoading(false);
-    }
+        return () => {
+          console.log('Cleaning up conversations subscription');
+          unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error setting up conversations subscription:', error);
+        setIsLoading(false);
+      }
+    }, 500); // 500ms delay to ensure auth is ready
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [user]);
 
   useEffect(() => {

@@ -83,16 +83,17 @@ const EnhancedChatScreen = () => {
   }
 
   useEffect(() => {
-    if (!user || !conversationId) {
-      console.log('Skipping Firestore setup - missing user or conversationId');
+    if (!user?.uid || !conversationId) {
+      console.log('Skipping Firestore setup - missing authenticated user or conversationId');
       return;
     }
 
-    console.log('Setting up message subscription for:', conversationId);
+    // Add delay to ensure Firebase Auth is fully ready
+    const timeoutId = setTimeout(() => {
+      console.log('Setting up message subscription for:', conversationId);
 
-    try {
-
-      const unsubscribe = subscribeToMessages(conversationId, (newMessages) => {
+      try {
+        const unsubscribe = subscribeToMessages(conversationId, (newMessages) => {
         setMessages(newMessages.reverse());
         
         newMessages.forEach(msg => {
@@ -112,15 +113,20 @@ const EnhancedChatScreen = () => {
       // Mark conversation as read
       markConversationAsRead(conversationId, user.uid).catch(console.error);
 
-      return () => {
-        console.log('Cleaning up subscriptions');
-        unsubscribe();
-        unsubscribeTyping();
-        stopTyping(conversationId, user.uid).catch(console.error);
-      };
-    } catch (error) {
-      console.error('Error setting up subscriptions:', error);
-    }
+        return () => {
+          console.log('Cleaning up subscriptions');
+          unsubscribe();
+          unsubscribeTyping();
+          stopTyping(conversationId, user.uid).catch(console.error);
+        };
+      } catch (error) {
+        console.error('Error setting up subscriptions:', error);
+      }
+    }, 500); // 500ms delay to ensure auth is ready
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [conversationId, user]);
 
   const handleSendMessage = async () => {
