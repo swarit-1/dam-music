@@ -24,13 +24,6 @@ export const useGoogleAuth = () => {
     androidClientId: GOOGLE_ANDROID_CLIENT_ID || GOOGLE_WEB_CLIENT_ID,
   });
 
-  console.log('===========================================');
-  console.log('Google Sign-In Configuration:');
-  console.log('Web Client ID:', GOOGLE_WEB_CLIENT_ID ? '✓ Set' : '✗ Missing');
-  console.log('iOS Client ID:', GOOGLE_IOS_CLIENT_ID ? '✓ Set' : '✗ Missing');
-  console.log('Android Client ID:', GOOGLE_ANDROID_CLIENT_ID ? '✓ Set' : '✗ Missing (using Web ID)');
-  console.log('===========================================');
-
   return { request, response, promptAsync };
 };
 

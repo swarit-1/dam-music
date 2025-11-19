@@ -130,13 +130,17 @@ const EnhancedChatScreen = () => {
   }, [conversationId, user]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() || !user) return;
+    if (!inputText.trim() || !user) {
+      console.warn('Send aborted: empty input or no user', { inputText, user });
+      return;
+    }
 
     const messageText = inputText.trim();
-    setInputText('');
-
+    // keep the input visible until we successfully queue the send to avoid UI confusion
     try {
-      await sendMessage(
+      console.log('Sending message', { conversationId, senderId: user.uid, messageText });
+
+      const messageId = await sendMessage(
         conversationId || '',
         user?.uid || '',
         user.displayName || 'User',
@@ -145,10 +149,15 @@ const EnhancedChatScreen = () => {
         { senderAvatar: user.photoURL || undefined }
       );
 
-      stopTyping(conversationId, user.uid);
-    } catch (error) {
+      console.log('Message sent, id=', messageId);
+      setInputText('');
+
+      // stop typing indicator
+      stopTyping(conversationId, user.uid).catch(console.error);
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      Alert.alert('Error', 'Failed to send message');
+      const message = error?.message || String(error);
+      Alert.alert('Error sending message', message);
     }
   };
 
