@@ -17,7 +17,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { getUserProfile } from "../services/authService";
 import AuthNavigator from "./AuthNavigator";
 import { colors } from "../theme/colors";
-import ChatListScreen from "../screens/messaging/ChatListScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -45,7 +44,7 @@ const MainTabs = () => {
             />
             <Tab.Screen
                 name="Messages"
-                component={ChatListScreen}
+                component={MessagingNavigator}
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <MaterialIcons

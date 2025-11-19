@@ -15,6 +15,10 @@ export const colors = {
     gray300: "#C0C0C0",
     gray400: "#888888",
     gray500: "#AAAAAA",
+    gray50: "#FAFAFA",
+    gray600: "#666666",
+    gray700: "#444444",
+    gray800: "#2A2A2A",
 
     // Surfaces
     surfaceDark: "#1a1a1a",

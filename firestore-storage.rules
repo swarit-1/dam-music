@@ -1,0 +1,89 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidFileSize(maxSizeMB) {
+      return request.resource.size < maxSizeMB * 1024 * 1024;
+    }
+    
+    function isImageFile() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isAudioFile() {
+      return request.resource.contentType.matches('audio/.*');
+    }
+    
+    function isVideoFile() {
+      return request.resource.contentType.matches('video/.*');
+    }
+    
+    function isDocumentFile() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/.*document.*') ||
+             request.resource.contentType.matches('text/.*');
+    }
+    
+    // Conversation files
+    match /conversations/{conversationId}/{fileType}/{fileName} {
+      // Anyone authenticated can read conversation files
+      // In production, you'd want to verify they're a participant via Firestore
+      allow read: if isAuthenticated();
+      
+      // Only authenticated users can upload
+      // File size and type restrictions
+      allow write: if isAuthenticated() && (
+        (fileType == 'audio' && isAudioFile() && isValidFileSize(100)) ||
+        (fileType == 'video' && isVideoFile() && isValidFileSize(200)) ||
+        (fileType == 'image' && isImageFile() && isValidFileSize(10)) ||
+        (fileType == 'document' && isDocumentFile() && isValidFileSize(50))
+      );
+      
+      // Allow deletion by authenticated users
+      // In production, restrict to file owner or conversation admin
+      allow delete: if isAuthenticated();
+    }
+    
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      // Anyone can read profile images
+      allow read: if true;
+      
+      // Only owner can upload/update their profile image
+      allow write: if isOwner(userId) && 
+        isImageFile() && 
+        isValidFileSize(5);
+      
+      // Only owner can delete
+      allow delete: if isOwner(userId);
+    }
+    
+    // Temporary uploads (for processing)
+    match /temp/{userId}/{fileName} {
+      // Only owner can read temp files
+      allow read: if isOwner(userId);
+      
+      // Only owner can upload temp files
+      allow write: if isOwner(userId) && isValidFileSize(200);
+      
+      // Only owner can delete
+      allow delete: if isOwner(userId);
+    }
+    
+    // Block all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

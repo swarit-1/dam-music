@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import {
   FIREBASE_API_KEY,
@@ -20,7 +20,24 @@ const firebaseConfig = {
   appId: FIREBASE_APP_ID
 };
 
-const app = initializeApp(firebaseConfig);
+// Prevent multiple Firebase initializations
+let app;
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
+}
+
+// Initialize Auth
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Initialize Firestore with optimized React Native settings
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  }),
+  experimentalAutoDetectLongPolling: true,
+});
+
+// Initialize Storage
 export const storage = getStorage(app);
