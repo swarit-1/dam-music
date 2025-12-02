@@ -104,12 +104,12 @@ const AppNavigator = () => {
             const isComplete =
                 profile &&
                 (profile.genre?.length > 0 || profile.role?.length > 0);
-            console.log("Profile check:", {
-                hasProfile: !!profile,
-                genres: profile?.genre?.length,
-                roles: profile?.role?.length,
-                isComplete,
-            });
+            // console.log("Profile check:", {
+            //     hasProfile: !!profile,
+            //     genres: profile?.genre?.length,
+            //     roles: profile?.role?.length,
+            //     isComplete,
+            // });
             setProfileComplete(isComplete);
         } catch (error) {
             console.error("Error checking profile:", error);
