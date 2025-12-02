@@ -25,12 +25,16 @@ import { signOut } from "../services/authService";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useAuth } from "../contexts/AuthContext";
 import { Video, ResizeMode } from "expo-av";
+import { createConversation, findExistingDirectConversation } from "../services/conversationService";
+import { useNavigation } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { BlurView } from "expo-blur";
 import { uploadProfileImage } from "../services/profileImageService";
 
 export default function ProfileScreen() {
     const { user } = useAuth();
+    const navigation = useNavigation<NavigationProp<any>>();
     const { profile, loading, error, refresh } = useUserProfile();
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);
     const [selectedVideo, setSelectedVideo] = useState<{ uri: string } | null>(null);
@@ -224,6 +228,60 @@ export default function ProfileScreen() {
         );
     };
 
+    const handleMessageConnection = async (connectionId: string) => {
+        if (!user) return;
+
+        try {
+            // Find the connection details
+            const connection = displayProfile.connections.find(c => c.id === connectionId);
+            if (!connection) return;
+
+            // Check if conversation already exists
+            const existingConversation = await findExistingDirectConversation(
+                [user.uid, connectionId]
+            );
+
+            let conversationId: string;
+
+            if (existingConversation) {
+                conversationId = existingConversation.id;
+            } else {
+                // Create new conversation
+                const participants = [
+                    {
+                        userId: user.uid,
+                        displayName: user.displayName || "You",
+                        avatar: user.photoURL || undefined,
+                        joinedAt: new Date(),
+                    },
+                    {
+                        userId: connectionId,
+                        displayName: connection.displayName,
+                        avatar: connection.avatarUrl || undefined,
+                        joinedAt: new Date(),
+                    },
+                ];
+                conversationId = await createConversation(
+                    user.uid,
+                    participants,
+                    "direct"
+                );
+            }
+
+            // Navigate to Messages tab, then to the specific chat
+            navigation.navigate("Messages", {
+                screen: "EnhancedChat",
+                params: {
+                    conversationId,
+                    chatName: connection.displayName,
+                },
+            });
+        } catch (error) {
+            console.error("Error opening chat with connection:", error);
+            Alert.alert("Error", "Failed to open chat. Please try again.");
+        }
+    };
+
     // Show loading indicator while fetching profile
     if (loading) {
         return (
@@ -247,6 +305,7 @@ export default function ProfileScreen() {
                 <ConnectionsScreen
                     connections={displayProfile.connections}
                     onRemoveConnection={handleRemoveConnection}
+                    onMessageConnection={handleMessageConnection}
                     onBack={() => setShowConnectionsScreen(false)}
                 />
             ) : (

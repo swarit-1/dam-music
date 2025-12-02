@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import FeedScreen from "../screens/FeedScreen";
+import FeedNavigator from "./FeedNavigator";
 import MessagingNavigator from "./MessagingNavigator";
 import ProfileScreen from "../screens/ProfileScreen";
 import ManagementNavigator from "./ManagementNavigator";
@@ -31,9 +31,9 @@ const MainTabs = () => {
         >
             <Tab.Screen
                 name="Feed"
-                component={FeedScreen}
+                component={FeedNavigator}
                 options={{
-                    tabBarIcon: ({ focused, color, size }) => (
+                    tabBarIcon: ({ focused }) => (
                         <MaterialIcons
                             name="home"
                             size={24}
@@ -125,24 +125,17 @@ const AppNavigator = () => {
             hasCheckedProfile.current = false;
             return;
         }
-
-        // Check profile initially
         if (!hasCheckedProfile.current) {
             hasCheckedProfile.current = true;
-            // For new signups, assume incomplete initially to allow navigation
             setProfileComplete(false);
-
-            // Delay the actual check to allow navigation to complete
             const timer = setTimeout(() => {
                 checkProfile();
-            }, 800); // Longer delay to ensure navigation.reset completes
+            }, 800); 
 
             return () => clearTimeout(timer);
         }
     }, [user]);
 
-    // If profile is incomplete, periodically re-check (every 2 seconds)
-    // This allows the app to detect when profile is updated in ProfileGenresScreen
     useEffect(() => {
         if (!user || profileComplete !== false) {
             return;
@@ -155,8 +148,6 @@ const AppNavigator = () => {
         return () => clearInterval(intervalId);
     }, [user, profileComplete, checkProfile]);
 
-    // Only show loading if auth is loading, not when checking profile
-    // This prevents remounting AuthNavigator during profile checks
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -165,16 +156,9 @@ const AppNavigator = () => {
         );
     }
 
-    // Determine which navigator to show
-    // If user exists but profile is incomplete (or null), show AuthNavigator
-    // If user exists and profile is complete, show MainTabs
-    // If no user, show AuthNavigator
-    // For dev users, always show MainTabs
     const shouldShowAuth =
         !user || (!isDevUser && (profileComplete === null || !profileComplete));
 
-    // Use a stable key based on user ID to preserve navigation state
-    // This prevents remounting when profileComplete changes
     const navigatorKey = user ? `auth-${user.uid}` : "auth-no-user";
 
     return (

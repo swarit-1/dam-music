@@ -15,7 +15,8 @@ import {
     Animated,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
 import { ScoredPost, User } from "../types";
 import { getFeedForUser } from "../services/matchingService";
 import { mockPosts } from "../data/mockData";
@@ -32,6 +33,7 @@ const DEFAULT_ITEM_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
 
 export default function FeedScreen() {
     const { user } = useAuth();
+    const navigation = useNavigation<NavigationProp<any>>();
     const [posts, setPosts] = useState<ScoredPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -403,18 +405,36 @@ export default function FeedScreen() {
                 <View style={styles.contentContainer}>
                     {/* Post header: avatar, name + roles, connect button */}
                     <View style={styles.postHeader}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>
-                                {(item.creator_name || "")
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .slice(0, 2)
-                                    .join("")
-                                    .toUpperCase()}
-                            </Text>
-                        </View>
+                        <TouchableOpacity
+                            style={styles.avatarTouchable}
+                            onPress={() =>
+                                navigation.navigate("CreatorProfile", {
+                                    creatorId: item.creator_id,
+                                    creatorName: item.creator_name,
+                                })
+                            }
+                        >
+                            <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>
+                                    {(item.creator_name || "")
+                                        .split(" ")
+                                        .map((n) => n[0])
+                                        .slice(0, 2)
+                                        .join("")
+                                        .toUpperCase()}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
 
-                        <View style={styles.nameColumn}>
+                        <TouchableOpacity
+                            style={styles.nameColumn}
+                            onPress={() =>
+                                navigation.navigate("CreatorProfile", {
+                                    creatorId: item.creator_id,
+                                    creatorName: item.creator_name,
+                                })
+                            }
+                        >
                             <Text style={styles.creatorName}>
                                 {item.creator_name}
                             </Text>
@@ -427,7 +447,7 @@ export default function FeedScreen() {
                                     </View>
                                 ))}
                             </View>
-                        </View>
+                        </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.connectButton}
@@ -765,6 +785,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 8,
     },
+    avatarTouchable: {
+        marginRight: 12,
+    },
     avatar: {
         width: 48,
         height: 48,
@@ -772,7 +795,6 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surfaceMid,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 12,
     },
     avatarText: {
         color: colors.white,
