@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import {
   FIREBASE_API_KEY,
@@ -28,16 +28,25 @@ if (getApps().length === 0) {
   app = getApps()[0];
 }
 
-// Initialize Auth
-export const auth = getAuth(app);
+// Initialize Auth - Firebase will automatically use AsyncStorage in React Native
+const auth = getAuth(app);
 
-// Initialize Firestore with optimized React Native settings
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  }),
-  experimentalAutoDetectLongPolling: true,
-});
+export { auth };
+
+// Initialize Firestore with React Native-compatible settings
+// Use memory cache instead of persistent cache (IndexedDB not available in React Native)
+// Check if Firestore is already initialized to prevent errors
+let db;
+try {
+  db = getFirestore(app);
+} catch {
+  db = initializeFirestore(app, {
+    localCache: memoryLocalCache(),
+    experimentalAutoDetectLongPolling: true,
+  });
+}
+
+export { db };
 
 // Initialize Storage
 export const storage = getStorage(app);

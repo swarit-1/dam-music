@@ -27,6 +27,8 @@ export const colors = {
 
     // Semantic (keep dangerous red for destructive actions)
     danger: "#ff3b30",
+    success: "#34C759",  // green for success states
+    green: "#34C759",
 };
 
 export default colors;

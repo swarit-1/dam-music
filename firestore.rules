@@ -73,5 +73,22 @@ service cloud.firestore {
       allow write: if isAuthenticated() &&
         request.resource.data.userId == request.auth.uid;
     }
+
+    // Connections collection (USER CONNECTIONS)
+    match /connections/{connectionId} {
+      // Users can read connections where they are either the user or the connected user
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.connectedUserId == request.auth.uid
+      );
+      // Users can create connections where they are the user
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      // Users can delete their own connections
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      // No updates allowed - delete and recreate instead
+      allow update: if false;
+    }
   }
 }
