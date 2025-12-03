@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../screens/auth/LoginScreen";
 import SignupScreen from "../screens/auth/SignupScreen";
 import ProfileCustomizationScreen from "../screens/auth/ProfileCustomizationScreen";
-import ProfileGenresScreen from "../screens/auth/ProfileGenresScreen";
+import ProfileVibeScreen from "../screens/auth/ProfileVibeScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,7 +18,7 @@ const AuthNavigator = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Signup" component={SignupScreen} />
             <Stack.Screen name="ProfileCustomization" component={ProfileCustomizationScreen} />
-            <Stack.Screen name="ProfileGenres" component={ProfileGenresScreen} />
+            <Stack.Screen name="ProfileVibe" component={ProfileVibeScreen} />
         </Stack.Navigator>
     );
 };

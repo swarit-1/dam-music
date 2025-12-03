@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,65 @@ import {
   ScrollView,
   Modal,
   Alert,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRoute } from '@react-navigation/native';
 
 export default function ProfileCustomizationScreen({ navigation }: any) {
+  const route = useRoute();
+  const fromDevSkip = (route.params as any)?.fromDevSkip || false;
   const [selectedSoftware, setSelectedSoftware] = useState('');
   const [selectedSkillLevel, setSelectedSkillLevel] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedCollaboration, setSelectedCollaboration] = useState('');
   const [showSoftwareModal, setShowSoftwareModal] = useState(false);
   const [showSkillLevelModal, setShowSkillLevelModal] = useState(false);
+  const [showCollaborationModal, setShowCollaborationModal] = useState(false);
+
+  // Animation values
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const modalTranslateY = useRef(new Animated.Value(400)).current;
+
+  // Handle modal animations
+  useEffect(() => {
+    if (showSoftwareModal || showSkillLevelModal || showCollaborationModal) {
+      // Reset animation values to initial state before animating in
+      overlayOpacity.setValue(0);
+      modalTranslateY.setValue(400);
+      
+      // Animate in
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(modalTranslateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Animate out
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(modalTranslateY, {
+          toValue: 400,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [showSoftwareModal, showSkillLevelModal, showCollaborationModal]);
 
   const softwareOptions = [
     'Ableton Live',
@@ -47,6 +96,34 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
     'Producer',
   ];
 
+  const genres = [
+    'Pop',
+    'Jazz',
+    'Rock',
+    'Country',
+    'R&B/Soul',
+    'Hip-Hop',
+    'Electronic',
+    'Classical',
+  ];
+
+  const roles = [
+    'Producer',
+    'Instrumentalist',
+    'Song Writer',
+    'Bassist',
+    'Vocalist',
+    'Soloist',
+    'Rapper',
+    'Drummer',
+  ];
+
+  const collaborationOptions = [
+    'In-Person',
+    'Online',
+    'Both',
+  ];
+
   const toggleSkill = (skill: string) => {
     if (selectedSkills.includes(skill)) {
       setSelectedSkills(selectedSkills.filter((s) => s !== skill));
@@ -55,9 +132,25 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
     }
   };
 
+  const toggleGenre = (genre: string) => {
+    if (selectedGenres.includes(genre)) {
+      setSelectedGenres(selectedGenres.filter((g) => g !== genre));
+    } else {
+      setSelectedGenres([...selectedGenres, genre]);
+    }
+  };
+
+  const toggleRole = (role: string) => {
+    if (selectedRoles.includes(role)) {
+      setSelectedRoles(selectedRoles.filter((r) => r !== role));
+    } else {
+      setSelectedRoles([...selectedRoles, role]);
+    }
+  };
+
   const handleNext = () => {
-    // Save profile data and navigate to genres screen
-    navigation.navigate('ProfileGenres');
+    // Navigate to "Who's Your Vibe?" screen
+    navigation.navigate('ProfileVibe');
   };
 
   const renderPickerModal = (
@@ -71,46 +164,59 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
     <Modal
       visible={visible}
       transparent={true}
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
-              <MaterialIcons name="close" size={24} color="#000000" />
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.modalOptions}>
-            {options.map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.modalOption,
-                  selectedValue === option && styles.modalOptionSelected,
-                ]}
-                onPress={() => {
-                  onSelect(option);
-                  onClose();
-                }}
-              >
-                <Text
-                  style={[
-                    styles.modalOptionText,
-                    selectedValue === option && styles.modalOptionTextSelected,
-                  ]}
-                >
-                  {option}
-                </Text>
-                {selectedValue === option && (
-                  <MaterialIcons name="check" size={24} color="#ffffff" />
-                )}
+      <Animated.View style={[styles.modalOverlay, { opacity: overlayOpacity }]}>
+        <TouchableOpacity 
+          style={styles.modalOverlayTouchable}
+          activeOpacity={1}
+          onPress={onClose}
+        >
+          <Animated.View 
+            style={[
+              styles.modalContent, 
+              { transform: [{ translateY: modalTranslateY }] }
+            ]}
+            onStartShouldSetResponder={() => true}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{title}</Text>
+              <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+                <MaterialIcons name="close" size={24} color="#000000" />
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      </View>
+            </View>
+            <ScrollView style={styles.modalOptions}>
+              {options.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.modalOption,
+                    selectedValue === option && styles.modalOptionSelected,
+                  ]}
+                  onPress={() => {
+                    onSelect(option);
+                    onClose();
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      selectedValue === option && styles.modalOptionTextSelected,
+                    ]}
+                  >
+                    {option}
+                  </Text>
+                  {selectedValue === option && (
+                    <MaterialIcons name="check" size={24} color="#ffffff" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        </TouchableOpacity>
+      </Animated.View>
     </Modal>
   );
 
@@ -145,9 +251,9 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
       >
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
-          <View style={styles.progressLineActive} />
           <View style={styles.progressLine} />
-          <View style={[styles.progressLine, { marginRight: 0 }]} />
+          <View style={styles.progressLine} />
+          <View style={[styles.progressLine, styles.progressLineInactive, { marginRight: 0 }]} />
         </View>
 
         {/* Title */}
@@ -195,9 +301,90 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
             ))}
           </View>
         </View>
+
+        {/* Genre Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Genre</Text>
+          <Text style={styles.sectionSubtitle}>
+            What genres would you be interested in working in?
+          </Text>
+          <View style={styles.skillsGrid}>
+            {genres.map((genre) => (
+              <TouchableOpacity
+                key={genre}
+                style={[
+                  styles.skillButton,
+                  selectedGenres.includes(genre) && styles.skillButtonSelected,
+                ]}
+                onPress={() => toggleGenre(genre)}
+              >
+                <Text
+                  style={[
+                    styles.skillButtonText,
+                    selectedGenres.includes(genre) && styles.skillButtonTextSelected,
+                  ]}
+                >
+                  {genre}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Roles Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Roles</Text>
+          <Text style={styles.sectionSubtitle}>
+            What do you identify with the most?
+          </Text>
+          <View style={styles.skillsGrid}>
+            {roles.map((role) => (
+              <TouchableOpacity
+                key={role}
+                style={[
+                  styles.skillButton,
+                  selectedRoles.includes(role) && styles.skillButtonSelected,
+                ]}
+                onPress={() => toggleRole(role)}
+              >
+                <Text
+                  style={[
+                    styles.skillButtonText,
+                    selectedRoles.includes(role) && styles.skillButtonTextSelected,
+                  ]}
+                >
+                  {role}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Collaboration Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Collaboration</Text>
+          <Text style={styles.sectionSubtitle}>
+            Select your preferred mode(s) of collaboration
+          </Text>
+          <TouchableOpacity
+            style={styles.dropdown}
+            onPress={() => setShowCollaborationModal(true)}
+          >
+            <Text style={[styles.dropdownText, !selectedCollaboration && styles.dropdownPlaceholder]}>
+              {selectedCollaboration || 'Select...'}
+            </Text>
+            <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
-      {/* Next Button */}
+      {/* Navigation Buttons */}
+      {fromDevSkip && (
+        <TouchableOpacity style={styles.devBackButton} onPress={() => navigation.goBack()}>
+          <MaterialIcons name="arrow-back" size={20} color="#ffffff" style={styles.devBackButtonIcon} />
+          <Text style={styles.devBackButtonText}>Dev Back</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
         <Text style={styles.nextButtonText}>Next</Text>
         <MaterialIcons name="arrow-forward" size={20} color="#ffffff" style={styles.nextButtonIcon} />
@@ -221,6 +408,16 @@ export default function ProfileCustomizationScreen({ navigation }: any) {
         skillLevelOptions,
         selectedSkillLevel,
         setSelectedSkillLevel
+      )}
+
+      {/* Collaboration Picker Modal */}
+      {renderPickerModal(
+        showCollaborationModal,
+        () => setShowCollaborationModal(false),
+        'Select Collaboration Mode',
+        collaborationOptions,
+        selectedCollaboration,
+        setSelectedCollaboration
       )}
     </LinearGradient>
   );
@@ -247,19 +444,15 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     marginRight: 10,
   },
-  progressLineActive: {
-    height: 4,
-    flex: 1,
-    backgroundColor: 'rgba(50, 25, 75, 1)',
-    borderRadius: 2,
-    marginRight: 10,
+  progressLineInactive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   title: {
     color: '#ffffff',
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 40,
-    fontFamily: 'serif',
+    fontFamily: 'KdamThmorPro',
     textAlign: 'center',
   },
   section: {
@@ -270,12 +463,13 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
-    fontFamily: 'serif',
+    fontFamily: 'KdamThmorPro',
   },
   sectionSubtitle: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
     marginBottom: 16,
+    fontFamily: 'LeagueSpartan',
   },
   dropdown: {
     backgroundColor: '#ffffff',
@@ -290,6 +484,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontSize: 16,
     flex: 1,
+    fontFamily: 'LeagueSpartan',
   },
   dropdownPlaceholder: {
     color: 'rgba(0, 0, 0, 0.5)',
@@ -312,11 +507,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(80, 42, 120, 0.3)',
     borderWidth: 2,
     borderColor: '#ffffff',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
   },
   skillButtonText: {
     color: '#000000',
     fontSize: 16,
     fontWeight: '500',
+    fontFamily: 'LeagueSpartan',
   },
   skillButtonTextSelected: {
     color: '#ffffff',
@@ -336,13 +534,41 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginRight: 8,
+    fontFamily: 'LeagueSpartan',
   },
   nextButtonIcon: {
     marginLeft: 4,
   },
+  devBackButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  devBackButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 6,
+    fontFamily: 'LeagueSpartan',
+  },
+  devBackButtonIcon: {
+    marginRight: 6,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalOverlayTouchable: {
+    flex: 1,
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -363,6 +589,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#000000',
+    fontFamily: 'LeagueSpartan',
   },
   modalCloseButton: {
     padding: 4,
@@ -384,6 +611,7 @@ const styles = StyleSheet.create({
   modalOptionText: {
     fontSize: 16,
     color: '#000000',
+    fontFamily: 'LeagueSpartan',
   },
   modalOptionTextSelected: {
     color: 'rgba(80, 42, 120, 1)',

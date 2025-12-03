@@ -17,7 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useGoogleAuth, handleGoogleSignIn } from '../../services/googleAuthService';
 import { signIn } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
-import Logo from '../../../assets/image.png';
+import Logo from '../../../assets/logo-white.png';
 import UsernameIcon from '../../../assets/username.svg';
 import LockIcon from '../../../assets/lock.svg';
 
@@ -104,12 +104,13 @@ export default function LoginScreen({ navigation }: any) {
           {/* Logo */}
           <View style={styles.logoContainer}>
             <Image source={Logo} style={styles.logoImage} resizeMode="contain" />
+            <Text style={styles.logoText}>VibeCheck</Text>
           </View>
 
           {/* Username Input */}
           <View style={styles.inputWrapper}>
-            <UsernameIcon width={21} height={25} style={styles.inputIcon} />
-            {!username && <Text style={styles.label}>Email</Text>}
+            <UsernameIcon width={18} height={22} style={styles.inputIcon} />
+            {!username && <Text style={styles.label}>Username</Text>}
             <TextInput
               style={styles.input}
               value={username}
@@ -125,7 +126,7 @@ export default function LoginScreen({ navigation }: any) {
           {/* Password Input */}
           <View style={styles.passwordWrapper}>
             <View style={styles.iconContainer}>
-              <LockIcon width={21} height={27} />
+              <LockIcon width={18} height={24} />
             </View>
             {!password && <Text style={styles.label}>Password</Text>}
             <TextInput
@@ -171,8 +172,11 @@ export default function LoginScreen({ navigation }: any) {
             disabled={loading}
             activeOpacity={0.8}
           >
-            <Text style={styles.createAccountButtonText}>Create Account</Text>
+            <Text style={styles.createAccountButtonText}>Sign Up</Text>
           </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.divider} />
 
           {/* Log In With Google Button */}
           <TouchableOpacity
@@ -213,68 +217,76 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 80,
+    paddingTop: 40,
     paddingBottom: 40,
     justifyContent: 'center',
     minHeight: '100%',
   },
   logoContainer: {
-    width: '80%',
-    maxWidth: 300,
-    height: 116,
+    width: '100%',
+    height: 450,
     alignItems: 'center',
-    marginBottom: 60,
+    marginBottom: 0,
+    marginTop: -40,
   },
   logoImage: {
     width: '100%',
-    maxWidth: 364,
-    height: 116,
+    height: 400,
+  },
+  logoText: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: -50,
+    textAlign: 'center',
+    fontFamily: 'KdamThmorPro',
   },
   inputWrapper: {
-    width: '80%',
-    maxWidth: 300,
+    width: '90%',
+    maxWidth: 400,
     height: 31,
     marginBottom: 30,
     overflow: 'visible',
   },
   passwordWrapper: {
-    width: '80%',
-    maxWidth: 300,
+    width: '90%',
+    maxWidth: 400,
     height: 31,
     marginBottom: 40,
     overflow: 'visible',
   },
   iconContainer: {
     position: 'absolute',
-    left: 0,
-    top: 3,
+    left: 15,
+    top: -1,
     width: 21,
-    height: 27,
+    height: 24,
   },
   inputIcon: {
     position: 'absolute',
-    left: 0,
-    top: 3,
+    left: 15,
+    top: -1,
   },
   eyeIcon: {
     position: 'absolute',
     right: 10,
-    top: 3,
+    top: -2,
     padding: 4,
   },
   label: {
     position: 'absolute',
-    left: 89,
-    top: 0,
+    left: 50,
+    top: 2,
     color: '#ffffff',
     fontSize: 20,
     fontWeight: '400',
     letterSpacing: 0,
+    fontFamily: 'LeagueSpartan',
   },
   input: {
     position: 'absolute',
-    left: 89,
-    top: 0,
+    left: 50,
+    top: 2,
     right: 0,
     height: 30,
     backgroundColor: 'transparent',
@@ -293,8 +305,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   loginButton: {
-    width: '80%',
-    maxWidth: 300,
+    width: '90%',
+    maxWidth: 400,
     height: 52,
     backgroundColor: '#ffffff',
     borderRadius: 7,
@@ -306,31 +318,31 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: '#000000',
-    fontFamily: 'Itim-Regular',
+    fontFamily: 'LeagueSpartan',
     fontSize: 20,
     fontWeight: '400',
     letterSpacing: 0,
   },
   createAccountButton: {
-    width: '80%',
-    maxWidth: 300,
+    width: '90%',
+    maxWidth: 400,
     height: 52,
     backgroundColor: '#ffffff',
     borderRadius: 7,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 0,
   },
   createAccountButtonText: {
     color: '#000000',
-    fontFamily: 'Itim-Regular',
+    fontFamily: 'LeagueSpartan',
     fontSize: 20,
     fontWeight: '400',
     letterSpacing: 0,
   },
   googleButton: {
-    width: '80%',
-    maxWidth: 300,
+    width: '90%',
+    maxWidth: 400,
     height: 52,
     backgroundColor: '#ffffff',
     borderRadius: 7,
@@ -340,14 +352,14 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     color: '#000000',
-    fontFamily: 'Itim-Regular',
+    fontFamily: 'LeagueSpartan',
     fontSize: 20,
     fontWeight: '400',
     letterSpacing: 0,
   },
   devSkipButton: {
-    width: '60%',
-    maxWidth: 240,
+    width: '70%',
+    maxWidth: 300,
     height: 40,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 5,
@@ -359,9 +371,16 @@ const styles = StyleSheet.create({
   },
   devSkipButtonText: {
     color: '#ffffff',
-    fontFamily: 'Itim-Regular',
-    fontSize: 16,
+    fontFamily: 'LeagueSpartan',
+    fontSize: 20,
     fontWeight: '400',
     letterSpacing: 0,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#ffffff',
+    marginVertical: 12.5,
+    width: '90%',
+    maxWidth: 400,
   },
 });
