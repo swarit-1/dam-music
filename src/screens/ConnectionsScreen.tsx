@@ -8,12 +8,14 @@ import { Connection } from "../types/profile";
 interface ConnectionsScreenProps {
     connections: Connection[];
     onRemoveConnection?: (connectionId: string) => void;
+    onMessageConnection?: (connectionId: string) => void;
     onBack?: () => void;
 }
 
 export default function ConnectionsScreen({
     connections,
     onRemoveConnection,
+    onMessageConnection,
     onBack,
 }: ConnectionsScreenProps) {
     return (
@@ -36,6 +38,7 @@ export default function ConnectionsScreen({
                 <ConnectionsManager
                     connections={connections}
                     onRemoveConnection={onRemoveConnection}
+                    onMessageConnection={onMessageConnection}
                 />
             </ScrollView>
         </View>

@@ -14,8 +14,10 @@ import {
     Platform,
     Animated,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
 import { ScoredPost, User } from "../types";
 import { getFeedForUser } from "../services/matchingService";
 import { mockPosts } from "../data/mockData";
@@ -23,6 +25,8 @@ import { audioService } from "../services/audioService";
 import { useAuth } from "../contexts/AuthContext";
 import { getUserProfile } from "../services/authService";
 import { colors } from "../theme/colors";
+import { getAllUsers, getPostsForUsers, addConnection, getUserConnections } from "../services/userDiscoveryService";
+import { SoundwaveVisualizer } from "../components/SoundwaveVisualizer";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const TAB_BAR_HEIGHT = 60; // fallback tab bar height
@@ -30,8 +34,21 @@ const TAB_BAR_HEIGHT = 60; // fallback tab bar height
 // correct across navigation/safe-area changes.
 const DEFAULT_ITEM_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
 
+// Gradient color schemes for feed items
+const GRADIENT_SCHEMES: readonly [string, string, string][] = [
+    ['#1a1a2e', '#16213e', '#0f3460'], // Deep blue
+    ['#2d1b2e', '#1f1635', '#2c1a4d'], // Purple-blue
+    ['#1c1c2e', '#252036', '#2e1f3d'], // Dark purple
+    ['#1a2332', '#1c2a3a', '#1e3247'], // Navy
+    ['#2e1f2f', '#261c2c', '#3d2845'], // Plum
+    ['#1b1e2f', '#1e2538', '#212d45'], // Midnight blue
+    ['#2a1e34', '#241d2e', '#352640'], // Deep violet
+    ['#1e1e2e', '#242333', '#2b2841'], // Charcoal purple
+];
+
 export default function FeedScreen() {
     const { user } = useAuth();
+    const navigation = useNavigation<NavigationProp<any>>();
     const [posts, setPosts] = useState<ScoredPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -61,6 +78,8 @@ export default function FeedScreen() {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
     // rotation Animated.Values per item index
     const rotationsRef = useRef<Record<number, Animated.Value>>({});
+    // Track which users are already connected
+    const [connectedUsers, setConnectedUsers] = useState<Set<string>>(new Set());
 
     const LOREM =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
@@ -330,12 +349,40 @@ export default function FeedScreen() {
 
             setFirebaseUser(userProfile);
 
-            // Fetch and rank posts using Firebase user data
+            // DEMO MODE: Use mock data for fast, reliable demo
             if (userProfile) {
+                console.log('[DEMO MODE] Using mock data for feed');
                 const rankedPosts = getFeedForUser(userProfile, mockPosts);
                 setPosts(rankedPosts);
+
+                // DEMO MODE: Auto-populate all mock users as connections
+                const allCreatorIds = new Set(mockPosts.map(post => post.creator_id));
+                setConnectedUsers(allCreatorIds);
+                console.log('[DEMO MODE] Auto-connected to all mock users:', allCreatorIds.size);
+
+                // Try to load Firebase data in background (optional)
+                if (user) {
+                    try {
+                        console.log('[Background] Fetching Firebase connections...');
+                        const existingConnections = await getUserConnections(user.uid);
+                        setConnectedUsers(new Set(existingConnections));
+
+                        console.log('[Background] Fetching Firebase users...');
+                        const allUsers = await getAllUsers(user.uid);
+
+                        if (allUsers.length > 0) {
+                            const userPosts = await getPostsForUsers(allUsers);
+                            const rankedFirebasePosts = getFeedForUser(userProfile, userPosts);
+                            // Silently update to real data if available
+                            setPosts(rankedFirebasePosts);
+                            console.log(`[Background] Updated to ${rankedFirebasePosts.length} real Firebase users`);
+                        }
+                    } catch (err) {
+                        console.log('[Background] Firebase fetch failed (continuing with mock data):', err);
+                    }
+                }
             } else {
-                // If no user, just show posts without ranking
+                // If no user, show mock posts
                 setPosts(mockPosts as ScoredPost[]);
             }
             setLoading(false);
@@ -368,6 +415,29 @@ export default function FeedScreen() {
         }
     };
 
+    const handleConnect = async (creatorId: string, creatorName: string) => {
+        // DEMO MODE: Hardcoded local connection (no Firebase)
+        if (connectedUsers.has(creatorId)) {
+            alert("You're already connected with this artist!");
+            return;
+        }
+
+        // Add to local state immediately - green checkmark appears!
+        setConnectedUsers(prev => new Set([...prev, creatorId]));
+
+        // Show success feedback
+        alert(`✓ Connected with ${creatorName}! Check Profile > Connections to message them.`);
+
+        // Optional: Try Firebase in background, but don't wait or show errors
+        if (user) {
+            try {
+                await addConnection(user.uid, creatorId);
+            } catch (error) {
+                console.log("Firebase connection save failed (demo mode continues):", error);
+            }
+        }
+    };
+
     const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
         if (viewableItems.length > 0) {
             const index = viewableItems[0].index;
@@ -394,27 +464,52 @@ export default function FeedScreen() {
             );
         }
 
+        const gradientColors = GRADIENT_SCHEMES[index % GRADIENT_SCHEMES.length];
+
         return (
             <View style={[styles.postContainer, { height: itemHeight }]}>
                 {/* Background gradient effect */}
-                <View style={styles.background} />
+                <LinearGradient
+                    colors={gradientColors}
+                    style={styles.background}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                />
 
                 {/* Content overlay */}
                 <View style={styles.contentContainer}>
                     {/* Post header: avatar, name + roles, connect button */}
                     <View style={styles.postHeader}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>
-                                {(item.creator_name || "")
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .slice(0, 2)
-                                    .join("")
-                                    .toUpperCase()}
-                            </Text>
-                        </View>
+                        <TouchableOpacity
+                            style={styles.avatarTouchable}
+                            onPress={() =>
+                                navigation.navigate("CreatorProfile", {
+                                    creatorId: item.creator_id,
+                                    creatorName: item.creator_name,
+                                })
+                            }
+                        >
+                            <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>
+                                    {(item.creator_name || "")
+                                        .split(" ")
+                                        .map((n) => n[0])
+                                        .slice(0, 2)
+                                        .join("")
+                                        .toUpperCase()}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
 
-                        <View style={styles.nameColumn}>
+                        <TouchableOpacity
+                            style={styles.nameColumn}
+                            onPress={() =>
+                                navigation.navigate("CreatorProfile", {
+                                    creatorId: item.creator_id,
+                                    creatorName: item.creator_name,
+                                })
+                            }
+                        >
                             <Text style={styles.creatorName}>
                                 {item.creator_name}
                             </Text>
@@ -427,18 +522,16 @@ export default function FeedScreen() {
                                     </View>
                                 ))}
                             </View>
-                        </View>
+                        </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.connectButton}
-                            onPress={() =>
-                                console.log("connect", item.creator_id)
-                            }
+                            onPress={() => handleConnect(item.creator_id, item.creator_name)}
                         >
                             <MaterialIcons
-                                name="person-add"
+                                name={connectedUsers.has(item.creator_id) ? "check" : "person-add"}
                                 size={22}
-                                color={colors.brandPurple}
+                                color={connectedUsers.has(item.creator_id) ? colors.green : colors.brandPurple}
                             />
                         </TouchableOpacity>
                     </View>
@@ -517,6 +610,18 @@ export default function FeedScreen() {
                             </View>
                         </View>
                     </View>
+
+
+                    {/* Animated Soundwave Visualizer - centered on screen */}
+                    {currentIndex === index && (
+                        <View style={styles.soundwaveContainer} pointerEvents="none">
+                            <SoundwaveVisualizer
+                                isPlaying={isPlaying}
+                                color={colors.brandPurple}
+                                barCount={30}
+                            />
+                        </View>
+                    )}
 
                     {/* Hold anywhere on the content to pause; release to resume */}
                     <Pressable
@@ -765,6 +870,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 8,
     },
+    avatarTouchable: {
+        marginRight: 12,
+    },
     avatar: {
         width: 48,
         height: 48,
@@ -772,7 +880,6 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surfaceMid,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 12,
     },
     avatarText: {
         color: colors.white,
@@ -884,5 +991,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         marginLeft: 4,
+    },
+    soundwaveContainer: {
+        position: "absolute",
+        top: "45%",
+        left: 0,
+        right: 0,
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 10,
     },
 });

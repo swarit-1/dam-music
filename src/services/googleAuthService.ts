@@ -3,20 +3,25 @@ import * as WebBrowser from 'expo-web-browser';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
-import { GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } from '@env';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID } from '@env';
 
 WebBrowser.maybeCompleteAuthSession();
 
 /**
  * Sign in with Google using Expo AuthSession
+ * 
+ * Make sure you have created OAuth clients in Google Cloud Console:
+ * - Web Application (for Firebase)
+ * - iOS (with your bundle ID)
+ * - Android (with your package name and SHA-1)
+ * 
+ * See GOOGLE_SIGNIN_SETUP.md for detailed instructions
  */
 export const useGoogleAuth = () => {
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: GOOGLE_WEB_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID, 
-    androidClientId: GOOGLE_WEB_CLIENT_ID,
-    // Explicitly set redirectUri to force webClientId format
-    redirectUri: 'https://auth.expo.io/@anonymous/dam-music',
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID || GOOGLE_WEB_CLIENT_ID,
   });
 
   return { request, response, promptAsync };

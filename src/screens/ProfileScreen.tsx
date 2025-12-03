@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     SafeAreaView,
@@ -21,16 +21,22 @@ import { colors } from "../theme/colors";
 import * as ImagePicker from "expo-image-picker";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
 import { VideoGrid } from "../profile/VideoGrid";
-import { signOut } from "../services/authService";
+import { signOut, getUserProfile } from "../services/authService";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useAuth } from "../contexts/AuthContext";
 import { Video, ResizeMode } from "expo-av";
+import { createConversation, findExistingDirectConversation } from "../services/conversationService";
+import { useNavigation } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { BlurView } from "expo-blur";
 import { uploadProfileImage } from "../services/profileImageService";
+import { getUserConnections } from "../services/userDiscoveryService";
+import { mockPosts } from "../data/mockData";
 
 export default function ProfileScreen() {
     const { user } = useAuth();
+    const navigation = useNavigation<NavigationProp<any>>();
     const { profile, loading, error, refresh } = useUserProfile();
     const [showConnectionsScreen, setShowConnectionsScreen] = useState(false);
     const [selectedVideo, setSelectedVideo] = useState<{ uri: string } | null>(null);
@@ -68,6 +74,65 @@ export default function ProfileScreen() {
     const [ showProfileImageUpload, setShowProfileImageUpload ] = useState(false);
     const [selectedProfileImage, setSelectedProfileImage] = useState<string | null>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [firebaseConnections, setFirebaseConnections] = useState<Connection[]>([]);
+
+    // Load connections from Firebase
+    useEffect(() => {
+        const loadConnections = async () => {
+            if (!user) return;
+
+            try {
+                // DEMO MODE: Auto-populate all mock users as connections
+                const mockConnections: Connection[] = mockPosts.map(post => ({
+                    id: post.creator_id,
+                    displayName: post.creator_name,
+                    username: post.creator_name.toLowerCase().replace(/\s+/g, ''),
+                    avatarUrl: undefined,
+                    connectionType: 'mutual' as const,
+                    connectedAt: new Date(),
+                }));
+
+                setFirebaseConnections(mockConnections);
+                console.log('[DEMO MODE] Loaded', mockConnections.length, 'mock connections');
+
+                // Try to load real Firebase connections in background
+                try {
+                    const connectionIds = await getUserConnections(user.uid);
+                    const connectionProfiles: Connection[] = [];
+
+                    for (const connId of connectionIds) {
+                        try {
+                            const connProfile = await getUserProfile(connId);
+                            if (connProfile) {
+                                connectionProfiles.push({
+                                    id: connId,
+                                    displayName: connProfile.displayName || 'Unknown',
+                                    username: connProfile.email?.split('@')[0] || 'user',
+                                    avatarUrl: connProfile.profileImage || undefined,
+                                    connectionType: 'mutual',
+                                    connectedAt: new Date(),
+                                });
+                            }
+                        } catch (err) {
+                            console.error(`Error loading connection ${connId}:`, err);
+                        }
+                    }
+
+                    // If we got real connections, use them instead
+                    if (connectionProfiles.length > 0) {
+                        setFirebaseConnections(connectionProfiles);
+                        console.log('[Background] Loaded', connectionProfiles.length, 'real Firebase connections');
+                    }
+                } catch (error) {
+                    console.log('[Background] Firebase connections fetch failed (continuing with mock data):', error);
+                }
+            } catch (error) {
+                console.error('Error loading connections:', error);
+            }
+        };
+
+        loadConnections();
+    }, [user]);
 
     const handlePickProfileImage = async () => {
         // Request media library permission if needed
@@ -224,6 +289,60 @@ export default function ProfileScreen() {
         );
     };
 
+    const handleMessageConnection = async (connectionId: string) => {
+        if (!user) return;
+
+        try {
+            // Find the connection details
+            const connection = displayProfile.connections.find(c => c.id === connectionId);
+            if (!connection) return;
+
+            // Check if conversation already exists
+            const existingConversation = await findExistingDirectConversation(
+                [user.uid, connectionId]
+            );
+
+            let conversationId: string;
+
+            if (existingConversation) {
+                conversationId = existingConversation.id;
+            } else {
+                // Create new conversation
+                const participants = [
+                    {
+                        userId: user.uid,
+                        displayName: user.displayName || "You",
+                        avatar: user.photoURL || undefined,
+                        joinedAt: new Date(),
+                    },
+                    {
+                        userId: connectionId,
+                        displayName: connection.displayName,
+                        avatar: connection.avatarUrl || undefined,
+                        joinedAt: new Date(),
+                    },
+                ];
+                conversationId = await createConversation(
+                    user.uid,
+                    participants,
+                    "direct"
+                );
+            }
+
+            // Navigate to Messages tab, then to the specific chat
+            navigation.navigate("Messages", {
+                screen: "EnhancedChat",
+                params: {
+                    conversationId,
+                    chatName: connection.displayName,
+                },
+            });
+        } catch (error) {
+            console.error("Error opening chat with connection:", error);
+            Alert.alert("Error", "Failed to open chat. Please try again.");
+        }
+    };
+
     // Show loading indicator while fetching profile
     if (loading) {
         return (
@@ -245,8 +364,9 @@ export default function ProfileScreen() {
         <SafeAreaView style={styles.container}>
             {showConnectionsScreen ? (
                 <ConnectionsScreen
-                    connections={displayProfile.connections}
+                    connections={firebaseConnections}
                     onRemoveConnection={handleRemoveConnection}
+                    onMessageConnection={handleMessageConnection}
                     onBack={() => setShowConnectionsScreen(false)}
                 />
             ) : (
@@ -372,7 +492,7 @@ export default function ProfileScreen() {
                                         }
                                     >
                                         <Text style={styles.connectionsNumber}>
-                                            {displayProfile.connections.length}{" "}
+                                            {firebaseConnections.length}{" "}
                                             Connections
                                         </Text>
                                     </TouchableOpacity>
