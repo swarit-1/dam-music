@@ -5,174 +5,39 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
-  TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../../theme/colors';
-import { Conversation, ConversationType } from '../../types/messaging';
+import { Conversation } from '../../types/messaging';
 import { MessagingStackParamList } from '../../navigation/MessagingNavigator';
-import { useAuth } from '../../contexts/AuthContext';
-import { subscribeToUserConversations, searchConversations } from '../../services/conversationService';
-import { subscribeToUserPresence } from '../../services/presenceService';
+import { mockConversations } from '../../data/mockMessagesData';
 
 const EnhancedChatListScreen = () => {
   const navigation = useNavigation<StackNavigationProp<MessagingStackParamList>>();
-  const { user } = useAuth();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [onlineStatus, setOnlineStatus] = useState<{ [userId: string]: boolean }>({});
 
   useEffect(() => {
-    if (!user?.uid) {
-      console.log('Skipping Firestore setup - no authenticated user');
-      setIsLoading(false);
-      return;
-    }
-
-    // Add delay to ensure Firebase Auth is fully ready
-    const timeoutId = setTimeout(() => {
-      console.log('Setting up conversations subscription for user:', user.uid);
-
-      try {
-        // Subscribe to user's conversations
-        const unsubscribe = subscribeToUserConversations(user.uid, (convs) => {
-          setConversations(convs);
-          setFilteredConversations(convs);
-          setIsLoading(false);
-
-          // Subscribe to presence for all participants
-          convs.forEach(conv => {
-            conv.participants.forEach(participant => {
-              if (participant.userId !== user.uid) {
-                subscribeToUserPresence(participant.userId, (presence) => {
-                  if (presence) {
-                    setOnlineStatus(prev => ({
-                      ...prev,
-                      [participant.userId]: presence.isOnline,
-                    }));
-                  }
-                });
-              }
-            });
-          });
-        });
-
-        return () => {
-          console.log('Cleaning up conversations subscription');
-          unsubscribe();
-        };
-      } catch (error) {
-        console.error('Error setting up conversations subscription:', error);
-        setIsLoading(false);
-      }
-    }, 500); // 500ms delay to ensure auth is ready
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredConversations(conversations);
-    } else {
-      const filtered = conversations.filter(conv => {
-        const lowerQuery = searchQuery.toLowerCase();
-        
-        // Search in conversation title
-        if (conv.title?.toLowerCase().includes(lowerQuery)) {
-          return true;
-        }
-        
-        // Search in participant names
-        return conv.participants.some(p =>
-          p.displayName.toLowerCase().includes(lowerQuery)
-        );
-      });
-      setFilteredConversations(filtered);
-    }
-  }, [searchQuery, conversations]);
+    // DEMO MODE: Use mock data instead of Firebase
+    console.log('[DEMO MODE] Using mock conversations data');
+    setConversations(mockConversations);
+    setIsLoading(false);
+  }, []);
 
   const getConversationName = (conversation: Conversation): string => {
-    if (conversation.type === 'project-group' && conversation.title) {
-      return conversation.title;
-    }
-
     // For direct conversations, show the other user's name
-    const otherParticipant = conversation.participants.find(p => p.userId !== user?.uid);
+    const otherParticipant = conversation.participants.find(p => p.userId !== 'currentUser');
     return otherParticipant?.displayName || 'Unknown';
   };
 
-  const getConversationAvatar = (conversation: Conversation): string | undefined => {
-    if (conversation.avatar) {
-      return conversation.avatar;
-    }
-
-    // For direct conversations, use other user's avatar
-    const otherParticipant = conversation.participants.find(p => p.userId !== user?.uid);
-    return otherParticipant?.avatar;
-  };
-
-  const getLastMessagePreview = (conversation: Conversation): string => {
-    if (!conversation.lastMessage) {
-      return 'No messages yet';
-    }
-
-    const { type, content, senderName } = conversation.lastMessage;
-    const prefix = conversation.type === 'project-group' ? `${senderName}: ` : '';
-
-    switch (type) {
-      case 'audio':
-        return `${prefix}🎵 Audio file`;
-      case 'video':
-        return `${prefix}🎥 Video`;
-      case 'file':
-        return `${prefix}📎 ${content}`;
-      case 'voice-note':
-        return `${prefix}🎤 Voice message`;
-      case 'collaboration-request':
-        return `${prefix}🤝 Collaboration request`;
-      case 'project-invitation':
-        return `${prefix}🎼 Project invitation`;
-      default:
-        return `${prefix}${content}`;
-    }
-  };
-
   const formatTimestamp = (date: Date): string => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Now';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays < 7) return `${diffDays}d`;
-    
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  };
-
-  const getUnreadCount = (conversation: Conversation): number => {
-    return conversation.unreadCount?.[user?.uid || ''] || 0;
-  };
-
-  const isUserOnline = (conversation: Conversation): boolean => {
-    if (conversation.type === 'direct') {
-      const otherParticipant = conversation.participants.find(p => p.userId !== user?.uid);
-      return otherParticipant ? onlineStatus[otherParticipant.userId] || false : false;
-    }
-    return false;
+    // Format as "00:00" for demo
+    return '00:00';
   };
 
   const handleConversationPress = (conversation: Conversation) => {
@@ -183,66 +48,40 @@ const EnhancedChatListScreen = () => {
   };
 
   const renderConversationItem = ({ item }: { item: Conversation }) => {
-    const unreadCount = getUnreadCount(item);
-    const isOnline = isUserOnline(item);
-    const avatar = getConversationAvatar(item);
-
     return (
       <TouchableOpacity
         style={styles.conversationItem}
         onPress={() => handleConversationPress(item)}
       >
         {/* Avatar */}
-        <View style={styles.avatarContainer}>
-          {avatar ? (
-            <Image source={{ uri: avatar }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <MaterialIcons
-                name={item.type === 'project-group' ? 'groups' : 'person'}
-                size={28}
-                color={colors.gray400}
-              />
-            </View>
-          )}
-          {isOnline && <View style={styles.onlineIndicator} />}
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {getConversationName(item)
+              .split(' ')
+              .map((n) => n[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase()}
+          </Text>
         </View>
 
         {/* Content */}
         <View style={styles.conversationContent}>
-          <View style={styles.conversationHeader}>
-            <Text style={[styles.conversationName, unreadCount > 0 && styles.unreadName]}>
-              {getConversationName(item)}
+          <Text style={styles.conversationName}>
+            {getConversationName(item)}
+          </Text>
+          <View style={styles.messageRow}>
+            <MaterialIcons name="mic" size={16} color={colors.green} />
+            <Text style={styles.lastMessage} numberOfLines={1}>
+              {item.lastMessage?.content || 'No messages yet'}
             </Text>
-            {item.lastMessage && (
-              <Text style={styles.timestamp}>
-                {formatTimestamp(item.lastMessage.timestamp)}
-              </Text>
-            )}
           </View>
-
-          <View style={styles.conversationFooter}>
-            <Text
-              style={[styles.lastMessage, unreadCount > 0 && styles.unreadMessage]}
-              numberOfLines={1}
-            >
-              {getLastMessagePreview(item)}
-            </Text>
-            {unreadCount > 0 && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadCount}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Project badge for group chats */}
-          {item.type === 'project-group' && item.projectMetadata && (
-            <View style={styles.projectBadge}>
-              <MaterialIcons name="music-note" size={12} color={colors.white} />
-              <Text style={styles.projectBadgeText}>{item.projectMetadata.genre || 'Project'}</Text>
-            </View>
-          )}
         </View>
+
+        {/* Timestamp */}
+        <Text style={styles.timestamp}>
+          {item.lastMessage && formatTimestamp(item.lastMessage.timestamp)}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -250,7 +89,7 @@ const EnhancedChatListScreen = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.brandPurple} />
+        <ActivityIndicator size="large" color={colors.white} />
       </View>
     );
   }
@@ -264,42 +103,23 @@ const EnhancedChatListScreen = () => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
-        <TouchableOpacity style={styles.newChatButton}>
-          <MaterialIcons name="edit" size={24} color={colors.black} />
+        <TouchableOpacity style={styles.backButton}>
+          <MaterialIcons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <MaterialIcons name="search" size={20} color={colors.gray500} />
-        <TextInput
-          style={styles.searchInput}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search conversations..."
-          placeholderTextColor={colors.gray400}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialIcons name="close" size={20} color={colors.gray500} />
-          </TouchableOpacity>
-        )}
+        <Text style={styles.headerTitle}>Messages</Text>
+        <View style={styles.placeholder} />
       </View>
 
       {/* Conversations List */}
       <FlatList
-        data={filteredConversations}
+        data={conversations}
         renderItem={renderConversationItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <MaterialIcons name="chat-bubble-outline" size={64} color={colors.gray300} />
+            <MaterialIcons name="chat-bubble-outline" size={64} color={colors.white} />
             <Text style={styles.emptyText}>No conversations yet</Text>
-            <Text style={styles.emptySubtext}>
-              {searchQuery ? 'Try a different search' : 'Start a new conversation to get started'}
-            </Text>
           </View>
         }
       />
@@ -315,7 +135,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.brandPurple,
   },
   header: {
     flexDirection: 'row',
@@ -323,141 +143,72 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 60,
-    paddingBottom: 16,
+    paddingBottom: 20,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.black,
-  },
-  newChatButton: {
+  backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.white,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    height: 44,
-    gap: 8,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.white,
+    letterSpacing: 0.5,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.black,
+  placeholder: {
+    width: 40,
   },
   listContent: {
+    paddingHorizontal: 16,
     paddingBottom: 16,
   },
   conversationItem: {
     flexDirection: 'row',
     backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 12,
+    marginBottom: 12,
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
   },
   avatar: {
     width: 56,
     height: 56,
     borderRadius: 28,
     marginRight: 12,
-  },
-  avatarPlaceholder: {
-    backgroundColor: colors.gray100,
+    backgroundColor: colors.gray200,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    right: 12,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#4CAF50',
-    borderWidth: 2,
-    borderColor: colors.white,
+  avatarText: {
+    color: colors.brandPurple,
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   conversationContent: {
     flex: 1,
-  },
-  conversationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
   },
   conversationName: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.black,
-    flex: 1,
+    marginBottom: 4,
   },
-  unreadName: {
-    fontWeight: '700',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: colors.gray500,
-    marginLeft: 8,
-  },
-  conversationFooter: {
+  messageRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 4,
   },
   lastMessage: {
     fontSize: 14,
     color: colors.gray600,
     flex: 1,
   },
-  unreadMessage: {
-    color: colors.black,
-    fontWeight: '500',
-  },
-  unreadBadge: {
-    backgroundColor: colors.brandPurple,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 6,
+  timestamp: {
+    fontSize: 12,
+    color: colors.gray500,
     marginLeft: 8,
-  },
-  unreadCount: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  projectBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.brandPurple,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    gap: 4,
-  },
-  projectBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.white,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -467,16 +218,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.black,
+    color: colors.white,
     marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.gray600,
-    textAlign: 'center',
-    marginTop: 8,
   },
 });
 
 export default EnhancedChatListScreen;
-
