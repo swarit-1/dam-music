@@ -8,541 +8,157 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Modal,
-  ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
-import { Message, MessageType, TypingIndicator as TypingIndicatorType } from '../../types/messaging';
+import { Message } from '../../types/messaging';
 import { MessagingStackParamList } from '../../navigation/MessagingNavigator';
-import { useAuth } from '../../contexts/AuthContext';
-
-// Message components
-import AudioMessage from '../../components/messaging/AudioMessage';
-import FileMessage from '../../components/messaging/FileMessage';
-import VideoMessage from '../../components/messaging/VideoMessage';
-import VoiceNoteMessage from '../../components/messaging/VoiceNoteMessage';
-import CollaborationRequestMessage from '../../components/messaging/CollaborationRequestMessage';
-import MessageReactions from '../../components/messaging/MessageReactions';
-import TypingIndicator from '../../components/messaging/TypingIndicator';
-
-// Services
-import {
-  sendMessage,
-  subscribeToMessages,
-  markMessageAsRead,
-  markAllMessagesAsRead,
-  addReaction,
-  updateCollaborationRequestStatus,
-} from '../../services/messageService';
-import {
-  pickAudioFile,
-  pickDocumentFile,
-  pickVideoFile,
-  uploadFile,
-  getAudioMetadata,
-  getFileMetadata,
-  detectFileType,
-  generateWaveformData,
-} from '../../services/fileUploadService';
-import { startTyping, stopTyping, subscribeToTypingIndicators } from '../../services/presenceService';
-import { markConversationAsRead } from '../../services/conversationService';
+import { mockMessages } from '../../data/mockMessagesData';
 
 type EnhancedChatScreenRouteProp = RouteProp<MessagingStackParamList, 'EnhancedChat'>;
 
 const EnhancedChatScreen = () => {
   const route = useRoute<EnhancedChatScreenRouteProp>();
   const navigation = useNavigation<StackNavigationProp<MessagingStackParamList>>();
-  const { user } = useAuth();
   const { conversationId, chatName } = route.params;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
-  const [typingUsers, setTypingUsers] = useState<TypingIndicatorType[]>([]);
 
   const flatListRef = useRef<FlatList>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  if (!user) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.brandPurple} />
-          <Text style={styles.loadingText}>Please log in</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   useEffect(() => {
-    if (!user?.uid || !conversationId) {
-      console.log('Skipping Firestore setup - missing authenticated user or conversationId');
+    // DEMO MODE: Load mock messages for this conversation
+    console.log('[DEMO MODE] Loading mock messages for conversation:', conversationId);
+    const conversationMessages = mockMessages[conversationId] || [];
+    setMessages([...conversationMessages].reverse());
+  }, [conversationId]);
+
+  const handleSendMessage = () => {
+    if (!inputText.trim()) {
       return;
     }
 
-    // Add delay to ensure Firebase Auth is fully ready
-    const timeoutId = setTimeout(() => {
-      console.log('Setting up message subscription for:', conversationId);
-
-      try {
-        const unsubscribe = subscribeToMessages(conversationId, (newMessages) => {
-        setMessages(newMessages.reverse());
-        
-        newMessages.forEach(msg => {
-          if (msg.senderId !== user.uid && !msg.readBy?.[user.uid]) {
-            markMessageAsRead(msg.id, user.uid).catch(console.error);
-          }
-        });
-      });
-
-      // Subscribe to typing indicators
-      const unsubscribeTyping = subscribeToTypingIndicators(
-        conversationId,
-        user.uid,
-        setTypingUsers
-      );
-
-      // Mark conversation as read
-      markConversationAsRead(conversationId, user.uid).catch(console.error);
-
-        return () => {
-          console.log('Cleaning up subscriptions');
-          unsubscribe();
-          unsubscribeTyping();
-          stopTyping(conversationId, user.uid).catch(console.error);
-        };
-      } catch (error) {
-        console.error('Error setting up subscriptions:', error);
-      }
-    }, 500); // 500ms delay to ensure auth is ready
-
-    return () => {
-      clearTimeout(timeoutId);
+    // DEMO MODE: Add message to local state (no Firebase)
+    const newMessage: Message = {
+      id: `msg-${Date.now()}`,
+      conversationId,
+      senderId: 'currentUser',
+      senderName: 'You',
+      type: 'text',
+      content: inputText.trim(),
+      timestamp: new Date(),
+      status: 'sent',
     };
-  }, [conversationId, user]);
 
-  const handleSendMessage = async () => {
-    if (!inputText.trim() || !user) {
-      console.warn('Send aborted: empty input or no user', { inputText, user });
-      return;
-    }
-
-    const messageText = inputText.trim();
-    // keep the input visible until we successfully queue the send to avoid UI confusion
-    try {
-      console.log('Sending message', { conversationId, senderId: user.uid, messageText });
-
-      const messageId = await sendMessage(
-        conversationId || '',
-        user?.uid || '',
-        user.displayName || 'User',
-        messageText,
-        'text',
-        { senderAvatar: user.photoURL || undefined }
-      );
-
-      console.log('Message sent, id=', messageId);
-      setInputText('');
-
-      // stop typing indicator
-      stopTyping(conversationId, user.uid).catch(console.error);
-    } catch (error: any) {
-      console.error('Error sending message:', error);
-      const message = error?.message || String(error);
-      Alert.alert('Error sending message', message);
-    }
+    setMessages([newMessage, ...messages]);
+    setInputText('');
   };
 
-  const handleInputChange = (text: string) => {
-    setInputText(text);
-
-    if (!user) return;
-
-    // Start typing indicator
-    if (text.length > 0) {
-      startTyping(conversationId, user.uid, user.displayName || 'User');
-
-      // Reset timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-
-      typingTimeoutRef.current = setTimeout(() => {
-        stopTyping(conversationId, user.uid);
-      }, 2000);
-    } else {
-      stopTyping(conversationId, user.uid);
-    }
-  };
-
-  const handleAttachAudio = async () => {
-    setShowAttachmentMenu(false);
-    
-    try {
-      const file = await pickAudioFile();
-      if (!file || !user) return;
-
-      setUploading(true);
-      
-      // Upload file
-      const audioUrl = await uploadFile(
-        file.uri,
-        file.name,
-        'audio',
-        conversationId,
-        setUploadProgress
-      );
-
-      // Get metadata
-      const metadata = await getAudioMetadata(file.uri, file.name, file.size);
-      metadata.waveformData = await generateWaveformData(file.uri);
-
-      // Send message
-      await sendMessage(
-        conversationId,
-        user.uid,
-        user.displayName || 'User',
-        file.name,
-        'audio',
-        {
-          senderAvatar: user.photoURL || undefined,
-          audioMetadata: metadata,
-        }
-      );
-
-      setUploading(false);
-      setUploadProgress(0);
-    } catch (error) {
-      console.error('Error attaching audio:', error);
-      Alert.alert('Error', 'Failed to attach audio file');
-      setUploading(false);
-    }
-  };
-
-  const handleAttachFile = async () => {
-    setShowAttachmentMenu(false);
-    
-    try {
-      const file = await pickDocumentFile();
-      if (!file || !user) return;
-
-      setUploading(true);
-      
-      const fileType = detectFileType(file.name, file.mimeType);
-      const fileUrl = await uploadFile(
-        file.uri,
-        file.name,
-        fileType,
-        conversationId,
-        setUploadProgress
-      );
-
-      const metadata = getFileMetadata(file.name, file.size, file.mimeType, fileUrl);
-
-      await sendMessage(
-        conversationId,
-        user.uid,
-        user.displayName || 'User',
-        file.name,
-        'file',
-        {
-          senderAvatar: user.photoURL || undefined,
-          fileMetadata: metadata,
-        }
-      );
-
-      setUploading(false);
-      setUploadProgress(0);
-    } catch (error) {
-      console.error('Error attaching file:', error);
-      Alert.alert('Error', 'Failed to attach file');
-      setUploading(false);
-    }
-  };
-
-  const handleAttachVideo = async () => {
-    setShowAttachmentMenu(false);
-    
-    try {
-      const file = await pickVideoFile();
-      if (!file || !user) return;
-
-      setUploading(true);
-      
-      const videoUrl = await uploadFile(
-        file.uri,
-        file.name,
-        'video',
-        conversationId,
-        setUploadProgress
-      );
-
-      await sendMessage(
-        conversationId,
-        user.uid,
-        user.displayName || 'User',
-        file.name,
-        'video',
-        {
-          senderAvatar: user.photoURL || undefined,
-          videoMetadata: {
-            duration: 0,
-            format: 'mp4',
-            size: file.size,
-            url: videoUrl,
-          },
-        }
-      );
-
-      setUploading(false);
-      setUploadProgress(0);
-    } catch (error) {
-      console.error('Error attaching video:', error);
-      Alert.alert('Error', 'Failed to attach video');
-      setUploading(false);
-    }
-  };
-
-  const handleReaction = async (messageId: string, emoji: string) => {
-    if (!user) return;
-    
-    try {
-      await addReaction(messageId, user.uid, user.displayName || 'User', emoji);
-    } catch (error) {
-      console.error('Error adding reaction:', error);
-    }
-  };
-
-  const handleCollaborationResponse = async (messageId: string, accepted: boolean) => {
-    try {
-      await updateCollaborationRequestStatus(messageId, accepted ? 'accepted' : 'declined');
-    } catch (error) {
-      console.error('Error updating collaboration request:', error);
-    }
+  const formatTime = (timestamp: Date) => {
+    const date = new Date(timestamp);
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
-    const isOwnMessage = user?.uid === item.senderId;
-
-    let messageContent;
-
-    switch (item.type) {
-      case 'audio':
-        messageContent = item.audioMetadata && (
-          <AudioMessage
-            audioUrl={item.audioMetadata.url || ''}
-            metadata={item.audioMetadata}
-            isOwnMessage={isOwnMessage}
-          />
-        );
-        break;
-
-      case 'video':
-        messageContent = item.videoMetadata && (
-          <VideoMessage
-            videoUrl={item.videoMetadata.url}
-            metadata={item.videoMetadata}
-            isOwnMessage={isOwnMessage}
-          />
-        );
-        break;
-
-      case 'file':
-        messageContent = item.fileMetadata && (
-          <FileMessage
-            fileMetadata={item.fileMetadata}
-            isOwnMessage={isOwnMessage}
-          />
-        );
-        break;
-
-      case 'voice-note':
-        messageContent = item.audioMetadata && (
-          <VoiceNoteMessage
-            audioUrl={item.audioMetadata.url || ''}
-            duration={item.audioMetadata.duration}
-            isOwnMessage={isOwnMessage}
-          />
-        );
-        break;
-
-      case 'collaboration-request':
-        messageContent = item.collaborationRequest && (
-          <CollaborationRequestMessage
-            data={item.collaborationRequest}
-            isOwnMessage={isOwnMessage}
-            onAccept={() => handleCollaborationResponse(item.id, true)}
-            onDecline={() => handleCollaborationResponse(item.id, false)}
-          />
-        );
-        break;
-
-      default:
-        messageContent = (
-          <View style={[styles.textMessageBubble, isOwnMessage && styles.ownMessageBubble]}>
-            <Text style={[styles.messageText, isOwnMessage && styles.ownMessageText]}>
-              {item.content}
-            </Text>
-          </View>
-        );
-    }
+    const isOwnMessage = item.senderId === 'currentUser';
 
     return (
-      <View style={[styles.messageContainer, isOwnMessage && styles.ownMessageContainer]}>
-        {!isOwnMessage && (
-          <Text style={styles.senderName}>{item.senderName}</Text>
-        )}
-        
-        {messageContent}
-
-        {/* Timestamp and Status */}
-        <View style={styles.messageFooter}>
-          <Text style={styles.timestamp}>
-            {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-          {isOwnMessage && (
-            <MaterialIcons
-              name={item.status === 'read' ? 'done-all' : 'done'}
-              size={16}
-              color={item.status === 'read' ? colors.brandPurple : colors.gray400}
-            />
+      <View
+        style={[
+          styles.messageContainer,
+          isOwnMessage ? styles.ownMessage : styles.otherMessage,
+        ]}
+      >
+        <View
+          style={[
+            styles.messageBubble,
+            isOwnMessage ? styles.ownBubble : styles.otherBubble,
+          ]}
+        >
+          {!isOwnMessage && (
+            <Text style={styles.senderName}>{item.senderName}</Text>
           )}
+          <Text
+            style={[
+              styles.messageText,
+              isOwnMessage ? styles.ownText : styles.otherText,
+            ]}
+          >
+            {item.content}
+          </Text>
+          <Text
+            style={[
+              styles.timestamp,
+              isOwnMessage ? styles.ownTimestamp : styles.otherTimestamp,
+            ]}
+          >
+            {formatTime(item.timestamp)}
+          </Text>
         </View>
-
-        {/* Reactions */}
-        {item.reactions && item.reactions.length > 0 && user && (
-          <MessageReactions
-            reactions={item.reactions}
-            onReactionPress={(emoji) => handleReaction(item.id, emoji)}
-            currentUserId={user.uid}
-          />
-        )}
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={24} color={colors.black} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{chatName}</Text>
-        <TouchableOpacity>
-          <MaterialIcons name="more-vert" size={24} color={colors.black} />
-        </TouchableOpacity>
+        <View style={styles.placeholder} />
       </View>
 
-      {/* Messages */}
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesList}
-          inverted
-          onContentSizeChange={() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true })}
+      {/* Messages List */}
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.messagesList}
+        inverted
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Input Bar */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={inputText}
+          onChangeText={setInputText}
+          placeholder="Type a message..."
+          placeholderTextColor={colors.gray400}
+          multiline
+          maxLength={1000}
         />
-
-        {/* Typing Indicator */}
-        {typingUsers.length > 0 && (
-          <TypingIndicator
-            userNames={typingUsers.map(t => t.userName)}
-            showNames
-          />
-        )}
-
-        {/* Upload Progress */}
-        {uploading && (
-          <View style={styles.uploadProgress}>
-            <ActivityIndicator size="small" color={colors.brandPurple} />
-            <Text style={styles.uploadText}>Uploading... {Math.round(uploadProgress)}%</Text>
-          </View>
-        )}
-
-        {/* Input */}
-        <View style={styles.inputContainer}>
-          <TouchableOpacity
-            style={styles.attachButton}
-            onPress={() => setShowAttachmentMenu(true)}
-          >
-            <MaterialIcons name="attach-file" size={24} color={colors.gray600} />
-          </TouchableOpacity>
-
-          <TextInput
-            style={styles.input}
-            value={inputText}
-            onChangeText={handleInputChange}
-            placeholder="Type a message..."
-            multiline
-            maxLength={1000}
-          />
-
-          <TouchableOpacity
-            style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-            onPress={handleSendMessage}
-            disabled={!inputText.trim()}
-          >
-            <MaterialIcons
-              name="send"
-              size={20}
-              color={inputText.trim() ? colors.white : colors.gray400}
-            />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* Attachment Menu */}
-      <Modal
-        visible={showAttachmentMenu}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowAttachmentMenu(false)}
-      >
         <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowAttachmentMenu(false)}
+          style={styles.sendButton}
+          onPress={handleSendMessage}
+          disabled={!inputText.trim()}
         >
-          <View style={styles.attachmentMenu}>
-            <TouchableOpacity style={styles.attachmentOption} onPress={handleAttachAudio}>
-              <View style={[styles.attachmentIcon, { backgroundColor: '#FF6B6B' }]}>
-                <MaterialIcons name="audiotrack" size={24} color={colors.white} />
-              </View>
-              <Text style={styles.attachmentLabel}>Audio</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.attachmentOption} onPress={handleAttachVideo}>
-              <View style={[styles.attachmentIcon, { backgroundColor: '#4ECDC4' }]}>
-                <MaterialIcons name="videocam" size={24} color={colors.white} />
-              </View>
-              <Text style={styles.attachmentLabel}>Video</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.attachmentOption} onPress={handleAttachFile}>
-              <View style={[styles.attachmentIcon, { backgroundColor: '#95A5A6' }]}>
-                <MaterialIcons name="insert-drive-file" size={24} color={colors.white} />
-              </View>
-              <Text style={styles.attachmentLabel}>File</Text>
-            </TouchableOpacity>
-          </View>
+          <MaterialIcons
+            name="send"
+            size={24}
+            color={inputText.trim() ? colors.brandPurple : colors.gray400}
+          />
         </TouchableOpacity>
-      </Modal>
-    </SafeAreaView>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -551,155 +167,108 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: colors.gray500,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
+    paddingTop: 60,
+    paddingBottom: 16,
+    backgroundColor: colors.brandPurple,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.black,
+    fontWeight: '700',
+    color: colors.white,
   },
-  keyboardView: {
-    flex: 1,
+  placeholder: {
+    width: 40,
   },
   messagesList: {
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   messageContainer: {
-    marginBottom: 16,
-    maxWidth: '85%',
+    marginBottom: 12,
+    maxWidth: '80%',
   },
-  ownMessageContainer: {
+  ownMessage: {
     alignSelf: 'flex-end',
-    alignItems: 'flex-end',
+  },
+  otherMessage: {
+    alignSelf: 'flex-start',
+  },
+  messageBubble: {
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  ownBubble: {
+    backgroundColor: colors.brandPurple,
+  },
+  otherBubble: {
+    backgroundColor: colors.gray100,
   },
   senderName: {
     fontSize: 12,
+    fontWeight: '600',
     color: colors.gray600,
     marginBottom: 4,
-    marginLeft: 4,
-  },
-  textMessageBubble: {
-    backgroundColor: colors.gray100,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  ownMessageBubble: {
-    backgroundColor: colors.brandPurple,
   },
   messageText: {
     fontSize: 15,
-    color: colors.black,
     lineHeight: 20,
   },
-  ownMessageText: {
+  ownText: {
     color: colors.white,
   },
-  messageFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-    marginLeft: 4,
+  otherText: {
+    color: colors.black,
   },
   timestamp: {
     fontSize: 11,
+    marginTop: 4,
+  },
+  ownTimestamp: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'right',
+  },
+  otherTimestamp: {
     color: colors.gray500,
-  },
-  uploadProgress: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  uploadText: {
-    fontSize: 13,
-    color: colors.gray600,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray100,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: colors.white,
-  },
-  attachButton: {
-    padding: 8,
-    marginBottom: 4,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray200,
   },
   input: {
     flex: 1,
-    maxHeight: 100,
-    backgroundColor: colors.gray50,
+    backgroundColor: colors.gray100,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    marginRight: 8,
+    maxHeight: 100,
     fontSize: 15,
-    marginHorizontal: 8,
+    color: colors.black,
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.brandPurple,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
-  },
-  sendButtonDisabled: {
-    backgroundColor: colors.gray200,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  attachmentMenu: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  attachmentOption: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  attachmentIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  attachmentLabel: {
-    fontSize: 13,
-    color: colors.gray700,
-    fontWeight: '500',
   },
 });
 
 export default EnhancedChatScreen;
-
