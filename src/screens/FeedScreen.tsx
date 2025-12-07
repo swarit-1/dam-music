@@ -14,8 +14,8 @@ import {
     Platform,
     Animated,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
 import { ScoredPost, User } from "../types";
@@ -355,10 +355,11 @@ export default function FeedScreen() {
                 const rankedPosts = getFeedForUser(userProfile, mockPosts);
                 setPosts(rankedPosts);
 
-                // DEMO MODE: Auto-populate all mock users as connections
-                const allCreatorIds = new Set(mockPosts.map(post => post.creator_id));
-                setConnectedUsers(allCreatorIds);
-                console.log('[DEMO MODE] Auto-connected to all mock users:', allCreatorIds.size);
+                // DEMO MODE: Connect to MOST users, but leave first 2 unconnected for demo
+                const allCreatorIds = mockPosts.map(post => post.creator_id);
+                const connectedIds = allCreatorIds.slice(2); // Skip first 2 users
+                setConnectedUsers(new Set(connectedIds));
+                console.log('[DEMO MODE] Auto-connected to', connectedIds.length, 'users, leaving', allCreatorIds.length - connectedIds.length, 'unconnected for demo');
 
                 // Try to load Firebase data in background (optional)
                 if (user) {
@@ -468,7 +469,7 @@ export default function FeedScreen() {
 
         return (
             <View style={[styles.postContainer, { height: itemHeight }]}>
-                {/* Background gradient effect */}
+                {/* Gradient background */}
                 <LinearGradient
                     colors={gradientColors}
                     style={styles.background}
@@ -798,7 +799,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "flex-end",
         padding: 20,
-        paddingBottom: 0,
+        paddingBottom: 20,
     },
     matchBadge: {
         position: "absolute",
@@ -826,7 +827,7 @@ const styles = StyleSheet.create({
     },
     creatorName: {
         color: colors.white,
-        fontSize: 28,
+        fontSize: 20,
         fontWeight: "bold",
         marginBottom: 4,
     },
@@ -874,9 +875,9 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: colors.surfaceMid,
         justifyContent: "center",
         alignItems: "center",
@@ -884,6 +885,7 @@ const styles = StyleSheet.create({
     avatarText: {
         color: colors.white,
         fontWeight: "bold",
+        fontSize: 16,
     },
     nameColumn: {
         flex: 1,
