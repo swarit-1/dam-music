@@ -11,6 +11,7 @@ import FeedNavigator from "./FeedNavigator";
 import MessagingNavigator from "./MessagingNavigator";
 import ProfileScreen from "../screens/ProfileScreen";
 import ManagementNavigator from "./ManagementNavigator";
+import UploadScreen from "../screens/UploadScreen";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
@@ -30,40 +31,40 @@ const MainTabs = () => {
             }}
         >
             <Tab.Screen
+                name="Management"
+                component={ManagementNavigator}
+                options={{
+                    tabBarIcon: ({ focused }) => (
+                        <MaterialIcons
+                            name="view-list"
+                            size={28}
+                            color={focused ? colors.white : 'rgba(255,255,255,0.5)'}
+                        />
+                    ),
+                }}
+            />
+            <Tab.Screen
                 name="Feed"
                 component={FeedNavigator}
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <MaterialIcons
                             name="home"
-                            size={24}
-                            color={focused ? colors.white : colors.gray300}
+                            size={28}
+                            color={focused ? colors.white : 'rgba(255,255,255,0.5)'}
                         />
                     ),
                 }}
             />
             <Tab.Screen
-                name="Messages"
-                component={MessagingNavigator}
+                name="Upload"
+                component={UploadScreen}
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <MaterialIcons
-                            name="chat-bubble"
-                            size={24}
-                            color={focused ? colors.white : colors.gray300}
-                        />
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="Management"
-                component={ManagementNavigator}
-                options={{
-                    tabBarIcon: ({ focused }) => (
-                        <MaterialIcons
-                            name="workspaces-outline"
-                            size={24}
-                            color={focused ? colors.white : colors.gray300}
+                            name="add-circle-outline"
+                            size={28}
+                            color={focused ? colors.white : 'rgba(255,255,255,0.5)'}
                         />
                     ),
                 }}
@@ -75,8 +76,21 @@ const MainTabs = () => {
                     tabBarIcon: ({ focused }) => (
                         <MaterialIcons
                             name="person"
-                            size={24}
-                            color={focused ? colors.white : colors.gray300}
+                            size={28}
+                            color={focused ? colors.white : 'rgba(255,255,255,0.5)'}
+                        />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Messages"
+                component={MessagingNavigator}
+                options={{
+                    tabBarIcon: ({ focused }) => (
+                        <MaterialIcons
+                            name="chat-bubble-outline"
+                            size={28}
+                            color={focused ? colors.white : 'rgba(255,255,255,0.5)'}
                         />
                     ),
                 }}
@@ -195,9 +209,9 @@ const styles = StyleSheet.create({
     },
     tabBar: {
         backgroundColor: colors.brandPurple600,
-        paddingTop: 5,
-        paddingBottom: 10,
-        height: 50,
+        paddingTop: 10,
+        paddingBottom: 20,
+        height: 70,
     },
     tabIcon: {
         width: 40,
