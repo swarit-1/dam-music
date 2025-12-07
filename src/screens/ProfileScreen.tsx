@@ -718,7 +718,8 @@ const styles = StyleSheet.create({
     },
     username: {
         fontSize: 16,
-        color: colors.gray500,
+        color: colors.gray600,
+        fontWeight: "500",
         marginBottom: 8,
     },
     bio: {

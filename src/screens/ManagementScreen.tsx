@@ -240,8 +240,8 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
     },
-    collabPartner: { fontSize: 14, color: colors.gray500 },
-    lastActivity: { fontSize: 12, color: colors.gray500 },
+    collabPartner: { fontSize: 14, color: colors.gray600, fontWeight: "500" },
+    lastActivity: { fontSize: 12, color: colors.gray600, fontWeight: "500" },
     entryButton: {
         width: 36,
         height: 36,

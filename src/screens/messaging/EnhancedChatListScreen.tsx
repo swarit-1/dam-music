@@ -202,7 +202,8 @@ const styles = StyleSheet.create({
   },
   lastMessage: {
     fontSize: 14,
-    color: colors.gray600,
+    color: colors.gray700,
+    fontWeight: "500",
     flex: 1,
   },
   timestamp: {

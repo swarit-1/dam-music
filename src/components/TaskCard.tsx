@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     },
     metaText: {
         fontSize: 12,
-        color: colors.gray500,
+        color: colors.gray600,
         fontWeight: "500",
     },
 });

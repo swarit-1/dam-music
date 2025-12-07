@@ -14,6 +14,7 @@ export interface Post {
   creator_name: string;
   creator_role: string[];
   audio_clip_url: string;
+  video_url?: string; // Optional video content
   genre: string;
   tags: string[];
   roles_needed: string[]; // e.g., ["vocalist", "guitarist"]

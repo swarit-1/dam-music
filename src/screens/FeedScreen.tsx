@@ -13,11 +13,13 @@ import {
     UIManager,
     Platform,
     Animated,
+    Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
+import { Video } from "expo-av";
 import { ScoredPost, User } from "../types";
 import { getFeedForUser } from "../services/matchingService";
 import { mockPosts } from "../data/mockData";
@@ -419,7 +421,7 @@ export default function FeedScreen() {
     const handleConnect = async (creatorId: string, creatorName: string) => {
         // DEMO MODE: Hardcoded local connection (no Firebase)
         if (connectedUsers.has(creatorId)) {
-            alert("You're already connected with this artist!");
+            Alert.alert("Already Connected", "You're already connected with this artist!");
             return;
         }
 
@@ -427,7 +429,8 @@ export default function FeedScreen() {
         setConnectedUsers(prev => new Set([...prev, creatorId]));
 
         // Show success feedback
-        alert(`✓ Connected with ${creatorName}! Check Profile > Connections to message them.`);
+        const firstName = creatorName.split(' ')[0];
+        Alert.alert("Successfully connected", `You're now connected with ${firstName}`);
 
         // Optional: Try Firebase in background, but don't wait or show errors
         if (user) {
@@ -613,15 +616,29 @@ export default function FeedScreen() {
                     </View>
 
 
-                    {/* Animated Soundwave Visualizer - centered on screen */}
-                    {currentIndex === index && (
-                        <View style={styles.soundwaveContainer} pointerEvents="none">
-                            <SoundwaveVisualizer
-                                isPlaying={isPlaying}
-                                color={colors.brandPurple}
-                                barCount={30}
+                    {/* Video or Animated Soundwave Visualizer - centered on screen */}
+                    {item.video_url ? (
+                        <View style={[styles.videoContainer, currentIndex !== index && styles.hidden]} pointerEvents="none">
+                            <Video
+                                source={item.video_url}
+                                style={styles.video}
+                                resizeMode="contain"
+                                shouldPlay={isPlaying && currentIndex === index}
+                                isLooping
+                                isMuted={false}
+                                useNativeControls={false}
                             />
                         </View>
+                    ) : (
+                        currentIndex === index && (
+                            <View style={styles.soundwaveContainer} pointerEvents="none">
+                                <SoundwaveVisualizer
+                                    isPlaying={isPlaying}
+                                    color={colors.brandPurple}
+                                    barCount={30}
+                                />
+                            </View>
+                        )
                     )}
 
                     {/* Hold anywhere on the content to pause; release to resume */}
@@ -800,6 +817,7 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
         padding: 20,
         paddingBottom: 20,
+        zIndex: 2,
     },
     matchBadge: {
         position: "absolute",
@@ -1002,5 +1020,23 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         zIndex: 10,
+    },
+    videoContainer: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1,
+    },
+    video: {
+        width: "100%",
+        height: "100%",
+        transform: [{ scale: 1.3 }],
+    },
+    hidden: {
+        opacity: 0,
     },
 });
